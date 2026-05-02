@@ -18,6 +18,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -27,29 +28,42 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
+
+import net.mgsx.gltf.loaders.glb.GLBLoader;
+import net.mgsx.gltf.scene3d.shaders.PBRShaderConfig;
+import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider;
+import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+
+// --- IMPORT BARU UNTUK GLTF ---
+import net.mgsx.gltf.loaders.gltf.GLTFLoader;
+import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
+import net.mgsx.gltf.scene3d.scene.Scene;
+import net.mgsx.gltf.scene3d.scene.SceneAsset;
+import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 /**
  * GameScreen — fondasi yang solid untuk 3D game libGDX.
  *
  * KONTROL PC:
- *   WASD          = Gerak relatif ke arah hadap kamera
- *   Shift         = Sprint (2x speed)
- *   Mouse kiri drag = Rotate kamera (orbit di sekitar player)
- *   Mouse scroll  = Zoom in/out
- *   Esc           = (placeholder: pause / keluar)
+ * WASD          = Gerak relatif ke arah hadap kamera
+ * Shift         = Sprint (2x speed)
+ * Mouse kiri drag = Rotate kamera (orbit di sekitar player)
+ * Mouse scroll  = Zoom in/out
+ * Esc           = (placeholder: pause / keluar)
  *
  * KONTROL MOBILE:
- *   Joystick kiri (touch area kiri)  = Gerak
- *   Drag di area kanan               = Rotate kamera
- *   Pinch                            = Zoom
+ * Joystick kiri (touch area kiri)  = Gerak
+ * Drag di area kanan               = Rotate kamera
+ * Pinch                            = Zoom
  *
  * MAP:
- *   - Ground tile berwarna-warni (hijau / coklat / stone pattern)
- *   - Obstacle boxes tersebar sebagai placeholder props
- *   - Langit biru clear dengan fog jauh
+ * - Ground tile berwarna-warni (hijau / coklat / stone pattern)
+ * - Obstacle boxes tersebar sebagai placeholder props
+ * - Langit biru clear dengan fog jauh
  */
 public class GameScreen implements Screen {
 
@@ -58,7 +72,7 @@ public class GameScreen implements Screen {
     // =========================================================
     private static final float PLAYER_SPEED        = 8f;
     private static final float PLAYER_SPRINT_MULT  = 2.2f;
-    private static final float PLAYER_HEIGHT       = 1f;       // Y offset dari tanah
+    private static final float PLAYER_HEIGHT       = 0f;       // Y offset dari tanah
 
     private static final float CAM_DISTANCE_DEFAULT = 10f;
     private static final float CAM_DISTANCE_MIN     = 3f;
@@ -77,10 +91,20 @@ public class GameScreen implements Screen {
     private Environment environment;
 
     // =========================================================
-    //  PLAYER
+    //  PLAYER (DIUBAH MENGGUNAKAN GLTF SCENEMANAGER)
     // =========================================================
-    private ModelInstance playerInstance;
-    private Model playerModel;
+    // private ModelInstance playerInstance; // Dihapus, diganti playerScene
+    // private Model playerModel;            // Dihapus, diganti sceneAsset
+    private SceneManager sceneManager;
+    private SceneAsset sceneAsset;
+    private Scene playerScene;
+
+    // --- VARIABEL BARU UNTUK ANIMASI ---
+    private AnimationController animationController;
+
+    private float playerYaw = 0f; // Menyimpan sudut putar karakter
+    private boolean isMoving = false;
+
     private Vector3 playerPos   = new Vector3(0, PLAYER_HEIGHT, 0);
     private Vector3 playerVel   = new Vector3();
 
@@ -156,6 +180,7 @@ public class GameScreen implements Screen {
         setupEnvironment();
         setupCamera();
         buildWorld();
+        setupGLTFPlayer(); // <-- MEMANGGIL SETUP KARAKTER GLTF
         setupInput();
     }
 
@@ -180,11 +205,85 @@ public class GameScreen implements Screen {
 
     // ─────────────────────────────────────────────────────────
     /**
+     * SETUP KARAKTER UTAMA (GLTF)
+     */
+    private void setupGLTFPlayer() {
+        // --- SOLUSI ERROR "TOO MANY BONES" YANG BENAR ---
+
+        float skalaKunti = 1.0f;
+
+        // 1. Config untuk shader utama (warna/material)
+        PBRShaderConfig config = PBRShaderProvider.createDefaultConfig();
+        config.numBones = 60; // Naikkan batas tulang karakter Kunti
+
+        // 2. Config untuk shader bayangan (depth), WAJIB disamakan jumlah tulangnya!
+        DepthShader.Config depthConfig = PBRShaderProvider.createDefaultDepthConfig();
+        depthConfig.numBones = 60;
+
+        // 3. Masukkan KEDUANYA ke dalam SceneManager dengan tipe yang benar
+        sceneManager = new SceneManager(
+            new PBRShaderProvider(config),
+            new PBRDepthShaderProvider(depthConfig)
+        );
+        // ------------------------------------------------
+
+        sceneManager.setCamera(cam);
+
+        // Menyamakan arah cahaya PBR dengan environment map kamu agar bayangannya sinkron
+        sceneManager.setAmbientLight(0.45f);
+        DirectionalLightEx sunLight = new DirectionalLightEx();
+        sunLight.direction.set(-1f, -1f, -0.4f).nor();
+        sunLight.color.set(Color.WHITE);
+        sunLight.intensity = 1.5f;
+        sceneManager.environment.add(sunLight);
+
+        // LOAD FILE GLTF DARI FOLDER ASSETS
+//        sceneAsset = new GLTFLoader().load(Gdx.files.internal("models/chars/character-a.glb"));
+        // KODE BARU YANG BENAR
+        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/example.glb"));
+        playerScene = new Scene(sceneAsset.scene);
+
+
+        // (OPSIONAL) Jika model 3D mu terlalu besar, aktifkan baris ini untuk mengecilkannya:
+        // playerScene.modelInstance.transform.setToScaling(0.5f, 0.5f, 0.5f);
+
+        // Tempatkan di posisi awal
+        playerScene.modelInstance.transform.setToTranslation(playerPos).scale(skalaKunti, skalaKunti, skalaKunti);
+
+
+        // 3. AKTIFKAN ANIMASI
+        // Buat controller yang menempel pada model pemain
+        animationController = new AnimationController(playerScene.modelInstance);
+
+        // --- TAMBAHAN KODE UNTUK NGE-PRINT NAMA ANIMASI ---
+//        System.out.println("=== DAFTAR ANIMASI KARAKTER INI ===");
+//        for (int i = 0; i < playerScene.modelInstance.animations.size; i++) {
+//            System.out.println("- " + playerScene.modelInstance.animations.get(i).id);
+//        }
+//        System.out.println("===================================");
+
+        // Putar animasi pertama yang tersedia di daftar (biar aman & gak crash)
+        if (playerScene.modelInstance.animations.size > 0) {
+            String namaAnimasiAman = playerScene.modelInstance.animations.get(0).id;
+            animationController.animate(namaAnimasiAman, -1, 1f, null, 0.2f);
+        }
+
+        // Putar animasi diam (Idle) sebagai default saat baru mulai.
+        // Note: Kenney biasanya menamai animasinya "Idle" (dengan huruf kapital).
+        animationController.animate("idle", -1, 1f, null, 0.2f);
+
+
+        sceneManager.addScene(playerScene);
+
+    }
+
+    // ─────────────────────────────────────────────────────────
+    /**
      * Bangun map:
-     *   - Ground tiles 5x5 unit dengan variasi warna
-     *   - Ring batu di tepi sebagai "dinding"
-     *   - Beberapa obstacle box tersebar
-     *   - Pohon-pohon silinder placeholder
+     * - Ground tiles 5x5 unit dengan variasi warna
+     * - Ring batu di tepi sebagai "dinding"
+     * - Beberapa obstacle box tersebar
+     * - Pohon-pohon silinder placeholder
      */
     private void buildWorld() {
         ModelBuilder mb = new ModelBuilder();
@@ -271,12 +370,14 @@ public class GameScreen implements Screen {
             worldInstances.add(leafI);
         }
 
-        // --- PLAYER MODEL ---
+        // --- PLAYER MODEL LAMA (DI-COMMENT KARENA SUDAH DIGANTI GLTF) ---
+        /*
         playerModel = mb.createBox(1f, 2f, 1f,
             new Material(ColorAttribute.createDiffuse(new Color(0.2f, 0.5f, 1f, 1f))),
             Usage.Position | Usage.Normal);
         playerInstance = new ModelInstance(playerModel);
         playerInstance.transform.setToTranslation(playerPos);
+        */
     }
 
     private void addBorderWall(ModelBuilder mb, Color color,
@@ -469,12 +570,24 @@ public class GameScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 
+        // 1. RENDER MAP (Lingkungan) dengan ModelBatch
         modelBatch.begin(cam);
         for (ModelInstance mi : worldInstances) {
             modelBatch.render(mi, environment);
         }
-        modelBatch.render(playerInstance, environment);
+        // modelBatch.render(playerInstance, environment); // Dihapus karena diganti GLTF
         modelBatch.end();
+
+        // 2. RENDER PLAYER GLTF dengan SceneManager
+        if (sceneManager != null) {
+            // UPDATE ANIMASINYA DI SINI
+            if (animationController != null) {
+                animationController.update(delta);
+            }
+
+            sceneManager.update(delta);
+            sceneManager.render();
+        }
 
         // HUD
         renderHUD();
@@ -490,17 +603,11 @@ public class GameScreen implements Screen {
         Vector2 moveInput = new Vector2();
 
         if (!IS_MOBILE) {
-            // ── PC INPUT ──
-            if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP))
-                moveInput.y += 1;
-            if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN))
-                moveInput.y -= 1;
-            if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT))
-                moveInput.x -= 1;
-            if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT))
-                moveInput.x += 1;
+            if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) moveInput.y += 1;
+            if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN)) moveInput.y -= 1;
+            if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) moveInput.x -= 1;
+            if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) moveInput.x += 1;
         } else {
-            // ── MOBILE JOYSTICK ──
             if (joystickActive) {
                 Vector2 jDelta = new Vector2(joystickCurrent).sub(joystickCenter);
                 float jLen = jDelta.len();
@@ -509,32 +616,55 @@ public class GameScreen implements Screen {
             }
         }
 
-        if (moveInput.len2() > 0.01f) {
-            moveInput.nor(); // normalize agar diagonal tidak lebih cepat
+        boolean currentlyMoving = moveInput.len2() > 0.01f;
+
+        if (currentlyMoving && !isMoving) {
+            if (animationController != null) animationController.animate("sprint", -1, 1f, null, 0.2f);
+        } else if (!currentlyMoving && isMoving) {
+            if (animationController != null) animationController.animate("idle", -1, 1f, null, 0.2f);
+        }
+
+        isMoving = currentlyMoving;
+
+        if (currentlyMoving) {
+            moveInput.nor();
             float speed = PLAYER_SPEED;
-            if (!IS_MOBILE && (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) ||
-                Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT))) {
+            if (!IS_MOBILE && (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT))) {
                 speed *= PLAYER_SPRINT_MULT;
             }
 
-            // Arah maju = berdasarkan yaw kamera (horizontal only)
             float yawRad = MathUtils.degreesToRadians * camYaw;
             float forwardX = -MathUtils.sin(yawRad);
             float forwardZ = -MathUtils.cos(yawRad);
             float rightX   =  MathUtils.cos(yawRad);
             float rightZ   = -MathUtils.sin(yawRad);
 
-            playerPos.x += (forwardX * moveInput.y + rightX * moveInput.x) * speed * delta;
-            playerPos.z += (forwardZ * moveInput.y + rightZ * moveInput.x) * speed * delta;
+            // Hitung seberapa jauh bergerak di sumbu X dan Z
+            float moveX = (forwardX * moveInput.y + rightX * moveInput.x);
+            float moveZ = (forwardZ * moveInput.y + rightZ * moveInput.x);
 
-            // Bounding ke dalam map
+            playerPos.x += moveX * speed * delta;
+            playerPos.z += moveZ * speed * delta;
+
+            // --- RUMUS BARU: HITUNG ARAH HADAP KARAKTER ---
+            // Kita hitung sudut rotasi berdasarkan arah pergerakan X dan Z
+            playerYaw = MathUtils.atan2(moveX, moveZ) * MathUtils.radiansToDegrees;
+
             float mapLimit = 48f;
             playerPos.x = MathUtils.clamp(playerPos.x, -mapLimit, mapLimit);
             playerPos.z = MathUtils.clamp(playerPos.z, -mapLimit, mapLimit);
         }
 
         playerPos.y = PLAYER_HEIGHT;
-        playerInstance.transform.setToTranslation(playerPos);
+
+        // --- CARA BARU MENGAPLIKASIKAN TRANSFORMASI ---
+        if (playerScene != null) {
+            // Karena kita menggunakan rotasi, kita harus mengatur Posisi -> Rotasi -> Skala secara berurutan
+            playerScene.modelInstance.transform
+                .setToTranslation(playerPos)         // 1. Taruh di posisinya
+                .rotate(Vector3.Y, playerYaw)        // 2. Putar badannya sesuai arah lari
+                .scale(0.5f, 0.5f, 0.5f);            // 3. Perkecil ukurannya (Sesuaikan dengan skalamu)
+        }
     }
 
     // ─────────────────────────────────────────────────────────
@@ -634,8 +764,14 @@ public class GameScreen implements Screen {
         modelBatch.dispose();
         spriteBatch.dispose();
         font.dispose();
-        if (playerModel != null) playerModel.dispose();
+
+        // if (playerModel != null) playerModel.dispose(); // Lama
+
         for (Model m : worldModels) { if (m != null) m.dispose(); }
         worldModels.clear();
+
+        // HAPUS MEMORI GLTF
+        if (sceneManager != null) sceneManager.dispose();
+        if (sceneAsset != null) sceneAsset.dispose();
     }
 }
