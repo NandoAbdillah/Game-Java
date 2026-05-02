@@ -1,0 +1,27 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+  api "com.badlogicgames.ashley:ashley:$ashleyVersion"
+  api "com.badlogicgames.gdx:gdx-ai:$aiVersion"
+  api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "com.crashinvaders.vfx:gdx-vfx-core:$gdxVfxCoreVersion"
+  api "com.crashinvaders.vfx:gdx-vfx-effects:$gdxVfxEffectsVersion"
+  api "com.github.czyzby:noise4j:$noise4jVersion"
+  api "com.github.mgsx-dev.gdx-gltf:gltf:$gdxGltfVersion"
+  api "com.github.tommyettinger:sjInGameConsole:$inGameConsoleVersion"
+  api "de.tomgrill.gdxdialogs:gdx-dialogs-core:$dialogsVersion"
+  api "games.rednblack.miniaudio:miniaudio:$miniaudioVersion"
+  api "net.onedaybeard.artemis:artemis-odb:$artemisOdbVersion"
+  api "org.apache.commons:commons-collections4:$commonsCollectionsVersion"
+
+  if(enableGraalNative == 'true') {
+    implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
+  }
+}
+
+jar {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
