@@ -2,14 +2,24 @@ package com.bismillahjuara.game.entity;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
+import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
+import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.bismillahjuara.game.camera.OrbitCamera;
 
 import net.mgsx.gltf.loaders.glb.GLBLoader;
+import net.mgsx.gltf.scene3d.attributes.PBRFloatAttribute;
 import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
@@ -38,38 +48,65 @@ public class Player extends Entity {
     }
 
     private void setupGLTF(OrbitCamera camera) {
-        float skalaKunti = 1.0f;
+        float skalaKarakter = 1.0f;
 
-        PBRShaderConfig config = PBRShaderProvider.createDefaultConfig();
-        config.numBones = 60;
+        // --- 1. SETUP SHADER (KITA PAKAI DEFAULT SHADER, BUKAN PBR) ---
+        // Ini akan mengabaikan hitungan fisika rumit dan langsung memunculkan warna aslimu
 
-        DepthShader.Config depthConfig = PBRShaderProvider.createDefaultDepthConfig();
-        depthConfig.numBones = 60;
+        // --- 1. SETUP SHADER (DENGAN KAPASITAS TULANG 80) ---
+        DefaultShader.Config config = new DefaultShader.Config();
+        config.numBones = 80;
 
-        sceneManager = new SceneManager(new PBRShaderProvider(config), new PBRDepthShaderProvider(depthConfig));
+        DepthShader.Config depthConfig = new DepthShader.Config();
+        depthConfig.numBones = 80;
+
+        // WAJIB: masukkan objek config ke dalam kurung Provider!
+        sceneManager = new SceneManager(
+            new DefaultShaderProvider(config),
+            new DepthShaderProvider(depthConfig)
+        );
+
         sceneManager.setCamera(camera.getCam());
 
-        sceneManager.setAmbientLight(0.45f);
+        // --- 2. SETUP CAHAYA KLASIK ---
+        // Karena bukan PBR, kita butuh ambient yang lebih terang
+        sceneManager.setAmbientLight(0.6f);
         DirectionalLightEx sunLight = new DirectionalLightEx();
         sunLight.direction.set(-1f, -1f, -0.4f).nor();
         sunLight.color.set(Color.WHITE);
-        sunLight.intensity = 1.5f;
+        sunLight.intensity = 1.0f;
         sceneManager.environment.add(sunLight);
 
-        // UBAH PATH FILE SESUAI MILIKMU
-        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/example.glb"));
+        // --- 3. LOAD MODEL ---
+        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/Ava2.glb"));
         playerScene = new Scene(sceneAsset.scene);
 
-        playerScene.modelInstance.transform.setToTranslation(position).scale(skalaKunti, skalaKunti, skalaKunti);
+        // --- 4. FIX MATERIAL UNTUK SHADER KLASIK ---
+        for (Material material : playerScene.modelInstance.materials) {
+            // Hapus sifat transparan
+            material.remove(BlendingAttribute.Type);
+            // Paksa pemotongan kedalaman (agar pohon/lantai tidak tembus)
+            material.set(new DepthTestAttribute(GL20.GL_LEQUAL, true));
+            // Paksa bagian dalam baju dibuang agar tidak menumpuk
+            material.set(IntAttribute.createCullFace(GL20.GL_BACK));
 
-        animationController = new AnimationController(playerScene.modelInstance);
-
-        if (playerScene.modelInstance.animations.size > 0) {
-            String namaAnimasiAman = playerScene.modelInstance.animations.get(0).id;
-            animationController.animate(namaAnimasiAman, -1, 1f, null, 0.2f);
+            // OBAT ANTI ABU-ABU: Paksa warna dasar material menjadi Putih Murni
+            // agar warna tekstur gambarmu keluar 100%
+            material.set(ColorAttribute.createDiffuse(Color.WHITE));
         }
-        animationController.animate("idle", -1, 1f, null, 0.2f);
 
+        // --- 5. SET POSISI & SKALA ---
+        playerScene.modelInstance.transform
+            .setToTranslation(position)
+            .scale(skalaKarakter, skalaKarakter, skalaKarakter);
+
+        // --- 6. SETUP ANIMASI ---
+        animationController = new AnimationController(playerScene.modelInstance);
+        if (playerScene.modelInstance.animations.size > 0) {
+            animationController.animate("Idle", -1, 1f, null, 0.2f);
+        }
+
+        // --- 7. TAMBAHKAN KE SCENE MANAGER ---
         sceneManager.addScene(playerScene);
     }
 
@@ -85,9 +122,9 @@ public class Player extends Entity {
         boolean currentlyMoving = moveInput.len2() > 0.01f;
 
         if (currentlyMoving && !isMoving) {
-            if (animationController != null) animationController.animate("sprint", -1, 1f, null, 0.2f);
+            if (animationController != null) animationController.animate("Walk", -1, 1f, null, 0.2f);
         } else if (!currentlyMoving && isMoving) {
-            if (animationController != null) animationController.animate("idle", -1, 1f, null, 0.2f);
+            if (animationController != null) animationController.animate("Idle", -1, 1f, null, 0.2f);
         }
 
         isMoving = currentlyMoving;
@@ -129,7 +166,10 @@ public class Player extends Entity {
     }
 
     public void render() {
-        if (sceneManager != null) sceneManager.render();
+        if (sceneManager != null) {
+            sceneManager.update(Gdx.graphics.getDeltaTime());
+            sceneManager.render();
+        }
     }
 
     public void dispose() {
