@@ -1,5 +1,6 @@
 package com.bismillahjuara.game.world;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
@@ -10,21 +11,38 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+
+// --- IMPORT UNTUK GLTF MAP ---
+import net.mgsx.gltf.loaders.glb.GLBLoader;
+import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
+import net.mgsx.gltf.scene3d.scene.Scene;
+import net.mgsx.gltf.scene3d.scene.SceneAsset;
+import net.mgsx.gltf.scene3d.scene.SceneManager;
+import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider;
+import net.mgsx.gltf.scene3d.shaders.PBRShaderConfig;
+import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class WorldMap {
+    // --- LAMA (Untuk objek dummy) ---
     private ModelBatch modelBatch;
     private Environment environment;
-
     private Array<ModelInstance> worldInstances = new Array<>();
     private List<Model> worldModels = new ArrayList<>();
 
+    // --- BARU (Untuk Map.glb) ---
+    private SceneManager sceneManager;
+    private SceneAsset mapAsset;
+    private Scene mapScene;
+
     public WorldMap() {
+        // 1. SETUP MODEL BATCH (Untuk box/pohon dummy lama)
         modelBatch = new ModelBatch();
 
         environment = new Environment();
@@ -32,7 +50,39 @@ public class WorldMap {
         environment.add(new DirectionalLight().set(1.0f, 0.95f, 0.85f, -1f, -1f, -0.4f));
         environment.add(new DirectionalLight().set(0.2f, 0.22f, 0.25f,  0.5f, 0.5f, 0.2f));
 
-        buildWorld();
+        // buildWorld(); // Logika dummy lama tetap dieksekusi!
+
+        // 2. SETUP SCENE MANAGER (Untuk merender Map.glb secara Realistis)
+        setupGLTFMap();
+    }
+
+    private void setupGLTFMap() {
+        // Konfigurasi PBR Shader anti-crash
+        PBRShaderConfig config = PBRShaderProvider.createDefaultConfig();
+        config.numBones = 60; // Berjaga-jaga jika map punya animasi (misal: kincir angin)
+
+        DepthShader.Config depthConfig = PBRShaderProvider.createDefaultDepthConfig();
+        depthConfig.numBones = 60;
+
+        sceneManager = new SceneManager(
+            new PBRShaderProvider(config),
+            new PBRDepthShaderProvider(depthConfig)
+        );
+
+        // Pencahayaan untuk Map GLTF
+        sceneManager.setAmbientLight(0.45f);
+        DirectionalLightEx sunLight = new DirectionalLightEx();
+        sunLight.direction.set(-1f, -1f, -0.4f).nor();
+        sunLight.color.set(Color.WHITE);
+        sunLight.intensity = 1.5f;
+        sceneManager.environment.add(sunLight);
+
+        // LOAD FILE Map.glb
+        // PASTIKAN NAMA DAN FOLDERNYA BENAR! (Misal: ada di android/assets/models/Map.glb)
+        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Map.glb"));
+        mapScene = new Scene(mapAsset.scene);
+
+        sceneManager.addScene(mapScene);
     }
 
     private void buildWorld() {
@@ -136,6 +186,14 @@ public class WorldMap {
     }
 
     public void render(PerspectiveCamera cam) {
+        // Render Map 3D yang baru
+        if (sceneManager != null) {
+            sceneManager.setCamera(cam);
+            sceneManager.update(Gdx.graphics.getDeltaTime());
+            sceneManager.render();
+        }
+
+        // Render Map/Properti Lama
         modelBatch.begin(cam);
         for (ModelInstance mi : worldInstances) {
             modelBatch.render(mi, environment);
@@ -147,5 +205,9 @@ public class WorldMap {
         modelBatch.dispose();
         for (Model m : worldModels) { if (m != null) m.dispose(); }
         worldModels.clear();
+
+        // Buang memori GLTF
+        if (sceneManager != null) sceneManager.dispose();
+        if (mapAsset != null) mapAsset.dispose();
     }
 }
