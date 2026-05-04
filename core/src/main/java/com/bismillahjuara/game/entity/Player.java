@@ -34,6 +34,8 @@ public class Player extends Entity {
     private static final float PLAYER_SPEED = 8f;
     private static final float PLAYER_SPRINT_MULT = 2.2f;
     private static final float PLAYER_HEIGHT = 0f;
+    private float skalaKarakter = 4.0f; // jadikan field cla ss
+
 
     // 3D Model GLTF
     private SceneManager sceneManager;
@@ -48,7 +50,7 @@ public class Player extends Entity {
     }
 
     private void setupGLTF(OrbitCamera camera) {
-        float skalaKarakter = 1.0f;
+
 
         // --- 1. SETUP SHADER (KITA PAKAI DEFAULT SHADER, BUKAN PBR) ---
         // Ini akan mengabaikan hitungan fisika rumit dan langsung memunculkan warna aslimu
@@ -158,7 +160,7 @@ public class Player extends Entity {
             playerScene.modelInstance.transform
                 .setToTranslation(position)
                 .rotate(Vector3.Y, yaw)
-                .scale(1f, 1f, 1f); // Sesuaikan skalanya kembali
+                .scale(skalaKarakter, skalaKarakter, skalaKarakter); // Sesuaikan skalanya kembali
         }
 
         if (animationController != null) animationController.update(delta);
