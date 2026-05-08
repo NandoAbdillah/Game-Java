@@ -80,7 +80,7 @@ public class Player extends Entity {
         sceneManager.environment.add(sunLight);
 
         // --- 3. LOAD MODEL ---
-        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/Ava2.glb"));
+        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/TimunMas.glb"));
         playerScene = new Scene(sceneAsset.scene);
 
         // --- 4. FIX MATERIAL UNTUK SHADER KLASIK ---
@@ -124,7 +124,7 @@ public class Player extends Entity {
         boolean currentlyMoving = moveInput.len2() > 0.01f;
 
         if (currentlyMoving && !isMoving) {
-            if (animationController != null) animationController.animate("Walk", -1, 1f, null, 0.2f);
+            if (animationController != null) animationController.animate("Run", -1, 1f, null, 0.2f);
         } else if (!currentlyMoving && isMoving) {
             if (animationController != null) animationController.animate("Idle", -1, 1f, null, 0.2f);
         }
