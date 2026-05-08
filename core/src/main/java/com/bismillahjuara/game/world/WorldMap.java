@@ -2,6 +2,7 @@ package com.bismillahjuara.game.world;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -9,14 +10,21 @@ import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
+import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
+import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-// --- IMPORT UNTUK GLTF MAP ---
+// --- IMPORT UNTUK GLTF MAP & ENTITY ---
 import net.mgsx.gltf.loaders.glb.GLBLoader;
 import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
 import net.mgsx.gltf.scene3d.scene.Scene;
@@ -25,6 +33,8 @@ import net.mgsx.gltf.scene3d.scene.SceneManager;
 import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider;
 import net.mgsx.gltf.scene3d.shaders.PBRShaderConfig;
 import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider;
+
+import com.bismillahjuara.game.entity.SukmaGowong;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +51,9 @@ public class WorldMap {
     private SceneAsset mapAsset;
     private Scene mapScene;
 
+    // --- DAFTAR MUSUH DI MAP INI ---
+    private Array<SukmaGowong> enemies = new Array<>();
+
     public WorldMap() {
         // 1. SETUP MODEL BATCH (Untuk box/pohon dummy lama)
         modelBatch = new ModelBatch();
@@ -55,6 +68,24 @@ public class WorldMap {
         // 2. SETUP SCENE MANAGER (Untuk merender Map.glb secara Realistis)
 //        setupGLTFMap();
 
+        // 3. SEBAR MUSUH DI MAP
+        spawnEnemies();
+    }
+
+    private void spawnEnemies() {
+        // Membuat 3 SukmaGowong di koordinat yang berbeda-beda
+        // Koordinat Y diatur ke 0 agar napak tanah
+        enemies.add(new SukmaGowong(new Vector3(10f, 0f, 15f)));
+        enemies.add(new SukmaGowong(new Vector3(-12f, 0f, 8f)));
+        enemies.add(new SukmaGowong(new Vector3(5f, 0f, -18f)));
+    }
+
+    // Fungsi baru untuk mengupdate logika AI semua musuh di map
+    // Fungsi ini dipanggil dari GameScreen setiap frame
+    public void updateEnemies(float delta, Vector3 playerPosition) {
+        for (SukmaGowong enemy : enemies) {
+            enemy.updateAI(delta, playerPosition);
+        }
     }
 
     private void setupGLTFMap() {
@@ -200,6 +231,11 @@ public class WorldMap {
             modelBatch.render(mi, environment);
         }
         modelBatch.end();
+
+        // Render Para Musuh (SukmaGowong)
+        for (SukmaGowong enemy : enemies) {
+            enemy.render(cam);
+        }
     }
 
     public void dispose() {
@@ -210,5 +246,10 @@ public class WorldMap {
         // Buang memori GLTF
         if (sceneManager != null) sceneManager.dispose();
         if (mapAsset != null) mapAsset.dispose();
+
+        // Buang memori musuh
+        for (SukmaGowong enemy : enemies) {
+            enemy.dispose();
+        }
     }
 }

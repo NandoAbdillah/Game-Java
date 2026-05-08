@@ -65,6 +65,16 @@ public class GameScreen implements Screen {
         player.render();
         // Gambar Joystick & Teks
         hud.render(player.getPosition(), camera.getYaw());
+
+        // Di dalam method render() di GameScreen.java:
+
+// Player kalkulasi posisi & animasi
+        player.handleMovement(moveInput, isSprinting, camera.getYaw(), delta);
+
+// NYALAKAN KECERDASAN BUATAN MUSUH:
+        world.updateEnemies(delta, player.getPosition());
+
+// ... kode render ke layar ...
     }
 
     @Override
