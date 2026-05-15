@@ -3,7 +3,7 @@ package com.bismillahjuara.game.input;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
-import com.bismillahjuara.game.camera.OrbitCamera;
+import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 
 public class DesktopInputController extends BaseInputController {
 
@@ -12,13 +12,12 @@ public class DesktopInputController extends BaseInputController {
     private static final float CAM_ROTATE_SPEED = 0.3f;
     private static final float CAM_ZOOM_SPEED   = 1.5f;
 
-    public DesktopInputController(OrbitCamera camera) {
+    public DesktopInputController(AdvancedCameraSystem camera) {
         super(camera);
     }
 
     @Override
     public void update(float delta) {
-        // 1. Update Movement Axis (WASD)
         float x = 0;
         float y = 0;
         if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) y += 1;
@@ -26,19 +25,15 @@ public class DesktopInputController extends BaseInputController {
         if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) x -= 1;
         if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) x += 1;
 
-        // Normalisasi agar jalan serong tidak lebih cepat
         Vector2 move = new Vector2(x, y);
         if (move.len2() > 0) move.nor();
 
         action.moveX = move.x;
         action.moveY = move.y;
 
-        // 2. Update Held Actions (Ditahan)
         action.sprintHeld = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
         action.crouchHeld = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT);
 
-        // 3. Update Transient Actions (Sekali pencet)
-        // isKeyJustPressed sudah otomatis ter-reset per frame oleh LibGDX!
         action.jumpPressed = Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
         action.attackPressed = Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT);
         action.kickPressed = Gdx.input.isKeyJustPressed(Input.Keys.R);
@@ -47,9 +42,9 @@ public class DesktopInputController extends BaseInputController {
         action.emotePressed = Gdx.input.isKeyJustPressed(Input.Keys.T);
         action.crouchToggled = Gdx.input.isKeyJustPressed(Input.Keys.C);
         action.diePressed = Gdx.input.isKeyJustPressed(Input.Keys.K);
+        action.toggleCameraPressed = Gdx.input.isKeyJustPressed(Input.Keys.V);
     }
 
-    // --- KONTROL KAMERA VIA MOUSE ---
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         if (button == Input.Buttons.LEFT) {
@@ -84,7 +79,7 @@ public class DesktopInputController extends BaseInputController {
 
     @Override
     public boolean scrolled(float amountX, float amountY) {
-        camera.addTargetDist(amountY * CAM_ZOOM_SPEED);
+        camera.addZoom(amountY * CAM_ZOOM_SPEED); // FIX: Panggil addZoom()
         return true;
     }
 }

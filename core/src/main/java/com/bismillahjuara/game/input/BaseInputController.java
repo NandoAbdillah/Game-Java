@@ -1,21 +1,17 @@
 package com.bismillahjuara.game.input;
 
 import com.badlogic.gdx.InputAdapter;
-import com.bismillahjuara.game.camera.OrbitCamera;
-
+import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 
 public abstract class BaseInputController extends InputAdapter {
-    protected OrbitCamera camera;
+    protected AdvancedCameraSystem camera; // FIX: Gunakan kamera modern
     protected InputAction action;
 
-    public BaseInputController(OrbitCamera camera) {
+    public BaseInputController(AdvancedCameraSystem camera) {
         this.camera = camera;
         this.action = new InputAction();
     }
 
-    /**
-     * Wajib diimplementasikan oleh setiap platform untuk meng-update nilai InputAction.
-     */
     public abstract void update(float delta);
 
     public InputAction getAction() {

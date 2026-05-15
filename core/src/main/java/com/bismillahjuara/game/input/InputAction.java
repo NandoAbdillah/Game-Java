@@ -24,6 +24,8 @@ public class InputAction {
     public boolean crouchToggled = false;
     public boolean diePressed = false; // Untuk testing
 
+    public boolean toggleCameraPressed = false;
+
     /**
      * Memastikan semua aksi trigger di-reset setiap frame agar tidak spam.
      * (LibGDX's isKeyJustPressed sudah otomatis, tapi method ini berguna untuk Mobile/Gamepad nanti)

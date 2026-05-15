@@ -2,7 +2,7 @@ package com.bismillahjuara.game.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
-import com.bismillahjuara.game.camera.OrbitCamera;
+import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.hud.HudManager;
 
 public class GameInputHandler implements InputProcessor {
@@ -13,20 +13,14 @@ public class GameInputHandler implements InputProcessor {
 
     private BaseInputController activeController;
 
-    // Membutuhkan HudManager untuk membaca Virtual Joystick di Mobile
-    public GameInputHandler(OrbitCamera camera, HudManager hudManager) {
+    // FIX: Menerima AdvancedCameraSystem, bukan OrbitCamera
+    public GameInputHandler(AdvancedCameraSystem camera, HudManager hudManager) {
         if (IS_MOBILE) {
             activeController = new MobileInputController(camera, hudManager);
         } else {
             activeController = new DesktopInputController(camera);
         }
     }
-
-//    public void setPlayer(com.bismillahjuara.game.entity.Player player) {
-//        if (activeController instanceof DesktopInputController) {
-//            ((DesktopInputController) activeController).setPlayer(player); // Tambahkan setter sementara jika kamu pakai event di Desktop
-//        }
-//    }
 
     public void update(float delta) {
         activeController.update(delta);
@@ -36,7 +30,6 @@ public class GameInputHandler implements InputProcessor {
         return activeController.getAction();
     }
 
-    // --- DELEGASI KE CONTROLLER AKTIF ---
     @Override public boolean keyDown(int keycode) { return activeController.keyDown(keycode); }
     @Override public boolean keyUp(int keycode) { return activeController.keyUp(keycode); }
     @Override public boolean keyTyped(char character) { return activeController.keyTyped(character); }

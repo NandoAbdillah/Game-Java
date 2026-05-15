@@ -2,7 +2,7 @@ package com.bismillahjuara.game.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
-import com.bismillahjuara.game.camera.OrbitCamera;
+import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.hud.HudManager;
 import com.bismillahjuara.game.hud.MobileControlsUI;
 
@@ -11,20 +11,19 @@ public class MobileInputController extends BaseInputController {
     private HudManager hudManager;
     private static final float CAM_ROTATE_SPEED = 0.3f;
 
-    // Data Kamera Sentuh
     public boolean camTouchActive = false;
     public int camTouchPointer = -1;
     private float camTouchLastX, camTouchLastY;
     private boolean pinching = false;
     private float pinchLastDist = 0f;
 
-    // Tracker status tombol sebelumnya (Untuk mensimulasikan isKeyJustPressed di Mobile)
     private boolean lastJumpState = false;
     private boolean lastAttackState = false;
     private boolean lastThrowState = false;
     private boolean lastCrouchState = false;
 
-    public MobileInputController(OrbitCamera camera, HudManager hudManager) {
+    // FIX: Gunakan AdvancedCameraSystem
+    public MobileInputController(AdvancedCameraSystem camera, HudManager hudManager) {
         super(camera);
         this.hudManager = hudManager;
     }
@@ -34,11 +33,9 @@ public class MobileInputController extends BaseInputController {
         if (hudManager != null && hudManager.getMobileControls() != null) {
             MobileControlsUI controls = hudManager.getMobileControls();
 
-            // 1. Update Joystick Analog
             action.moveX = controls.getJoystickX();
             action.moveY = controls.getJoystickY();
 
-            // 2. Baca Tombol Aksi & Deteksi Trigger Sekali Pencet (Edge Detection)
             boolean currentJump = controls.isJumpPressed();
             action.jumpPressed = currentJump && !lastJumpState;
             lastJumpState = currentJump;
@@ -55,9 +52,7 @@ public class MobileInputController extends BaseInputController {
             action.crouchToggled = currentCrouch && !lastCrouchState;
             lastCrouchState = currentCrouch;
 
-            // Fitur Sprint Khusus Mobile: Kalau ditarik pol, otomatis sprint!
             action.sprintHeld = (Math.abs(action.moveX) > 0.8f || Math.abs(action.moveY) > 0.8f);
-
         } else {
             action.moveX = 0f;
             action.moveY = 0f;
@@ -65,7 +60,6 @@ public class MobileInputController extends BaseInputController {
         }
     }
 
-    // --- KONTROL KAMERA (Area sisa yang tidak terhalang UI) ---
     @Override
     public boolean touchDown(int sx, int sy, int pointer, int button) {
         if (!camTouchActive) {
@@ -98,7 +92,11 @@ public class MobileInputController extends BaseInputController {
         if (pinching) {
             if (pointer == camTouchPointer) {
                 float newDist = Vector2.dst(camTouchLastX, (screenH - camTouchLastY), sx, (screenH - (float)sy));
-                camera.setPinchDist(camera.getTargetDist() + (pinchLastDist - newDist) * 0.05f);
+
+                // FIX: Gunakan fitur Zoom kamera modern!
+                float zoomDelta = (pinchLastDist - newDist) * 0.05f;
+                camera.addZoom(zoomDelta);
+
                 pinchLastDist = newDist;
             }
             return true;
