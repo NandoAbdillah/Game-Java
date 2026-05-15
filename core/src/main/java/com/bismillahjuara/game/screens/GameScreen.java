@@ -19,53 +19,60 @@ public class GameScreen implements Screen {
     private WorldMap world;
     private HudManager hudManager;
 
-    public GameScreen() {}
+    public GameScreen() {
+        // KOSONGKAN CONSTRUCTOR!
+        // Di arsitektur AAA, kita tidak boleh melakukan pekerjaan berat saat instansiasi objek.
+        // Biarkan AsyncGameplayLoader yang merakitnya satu per satu.
+    }
+
+    // ==========================================================
+    // --- DEFERRED INITIALIZATION (Dipanggil oleh Pipeline Loader) ---
+    // ==========================================================
+
+    public void initWorld() {
+        world = new WorldMap();
+    }
+
+    public void initEntities() {
+        camera = new OrbitCamera();
+        player = new Player(camera);
+    }
+
+    public void initUI() {
+        hudManager = new HudManager();
+        inputHandler = new GameInputHandler(camera, hudManager);
+    }
+
+    // ==========================================================
 
     @Override
     public void show() {
-        // 1. Inisialisasi HUD (UI) lebih dulu
-        hudManager = new HudManager();
+        // Method ini HANYA dipanggil oleh Engine saat loading sudah 100%
+        // dan layer ini benar-benar ditampilkan di layar.
 
-        // 2. Inisialisasi Kamera & Input Manager
-        camera = new OrbitCamera();
-        inputHandler = new GameInputHandler(camera, hudManager);
-
-        // 3. MULTIPLEXER (Best Practice LibGDX)
         InputMultiplexer multiplexer = new InputMultiplexer();
-        multiplexer.addProcessor(hudManager.getStage()); // UI menyerap input lebih dulu
-        multiplexer.addProcessor(inputHandler);          // Sisanya dilempar ke Kamera 3D
+        // Failsafe null check (berjaga-jaga)
+        if (hudManager != null) multiplexer.addProcessor(hudManager.getStage());
+        if (inputHandler != null) multiplexer.addProcessor(inputHandler);
+
         Gdx.input.setInputProcessor(multiplexer);
-
-        // 4. Inisialisasi Dunia dan Karakter
-        world = new WorldMap();
-        player = new Player(camera);
-
-        // CATATAN ENGINEER:
-        // Kita TIDAK LAGI memanggil inputHandler.setPlayer(player).
-        // Karena sekarang kita memakai Data-Driven Input Architecture.
     }
 
     @Override
     public void render(float delta) {
-        // Failsafe: Cegah "Spiral of Death" jika frame drop parah (Best practice Physics Engine)
         delta = Math.min(delta, 0.05f);
 
-        // ==========================================
-        // --- DATA-DRIVEN LOGIC PIPELINE ---
-        // ==========================================
-        // 1. Input Controller membaca hardware dan memperbarui state "InputAction"
-        inputHandler.update(delta);
+        // Failsafe: Jangan render jika loading belum beres
+        if (player == null || world == null || inputHandler == null) return;
 
-        // 2. Player mengonsumsi "InputAction" untuk bergerak dan animasi
+        // --- DATA-DRIVEN LOGIC PIPELINE ---
+        inputHandler.update(delta);
         player.processInputAndPhysics(inputHandler.getAction(), camera.getYaw(), delta);
 
-        // 3. AI & Kamera mengikuti Player
         world.updateEnemies(delta, player.getPosition());
         camera.update(player.getPosition(), delta);
 
-        // ==========================================
         // --- RENDER PIPELINE ---
-        // ==========================================
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClearColor(0.53f, 0.81f, 0.98f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -74,25 +81,28 @@ public class GameScreen implements Screen {
         world.render(camera.getCam());
         player.render();
 
-        // RENDER 2D UI (HARUS PALING TERAKHIR)
         hudManager.updateAndRender(player.getPosition(), camera.getYaw());
     }
 
     @Override
     public void resize(int width, int height) {
-        camera.resize(width, height);
-        hudManager.resize(width, height);
+        if (camera != null) camera.resize(width, height);
+        if (hudManager != null) hudManager.resize(width, height);
     }
 
     @Override public void pause()  {}
     @Override public void resume() {}
-    @Override public void hide()   {}
+
+    @Override
+    public void hide() {
+        // Lepas input agar tidak nyangkut saat pindah ke layar lain
+        Gdx.input.setInputProcessor(null);
+    }
 
     @Override
     public void dispose() {
-        // Mencegah Memory Leak (Best Practice Lifecycle)
-        player.dispose();
-        world.dispose();
-        hudManager.dispose();
+        if (player != null) player.dispose();
+        if (world != null) world.dispose();
+        if (hudManager != null) hudManager.dispose();
     }
 }

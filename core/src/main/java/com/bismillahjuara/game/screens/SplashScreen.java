@@ -61,10 +61,8 @@ public class SplashScreen extends BaseScreen {
     }
 
     private void goToNextScreen() {
-        // TODO: Nanti arahkan ke LoadingScreen atau MainMenuScreen
-        // Untuk sekarang, kita arahkan langsung ke GameScreen dengan Transisi Fade (durasi 1 detik)
-
-        GameScreen nextScreen = new GameScreen();
+        // AAA Flow: SplashScreen -> BootLoadingScreen -> MainMenuScreen -> GameScreen
+        BootLoadingScreen nextScreen = new BootLoadingScreen();
         ScreenManager.getInstance().setScreen(nextScreen, new FadeTransition(1.0f));
     }
 
