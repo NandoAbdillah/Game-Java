@@ -1,86 +1,87 @@
 package com.bismillahjuara.game.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.math.Vector2;
 
-// Import sistem buatan kita sendiri!
 import com.bismillahjuara.game.camera.OrbitCamera;
 import com.bismillahjuara.game.entity.Player;
-import com.bismillahjuara.game.hud.HudRenderer;
+import com.bismillahjuara.game.hud.HudManager;
 import com.bismillahjuara.game.input.GameInputHandler;
 import com.bismillahjuara.game.world.WorldMap;
 
 public class GameScreen implements Screen {
 
     private OrbitCamera camera;
-    private GameInputHandler input;
+    private GameInputHandler inputHandler;
     private Player player;
     private WorldMap world;
-    private HudRenderer hud;
+    private HudManager hudManager;
 
     public GameScreen() {}
 
     @Override
     public void show() {
-        // 1. Inisialisasi Kamera
+        // 1. Inisialisasi HUD (UI) lebih dulu
+        hudManager = new HudManager();
+
+        // 2. Inisialisasi Kamera & Input Manager
         camera = new OrbitCamera();
+        inputHandler = new GameInputHandler(camera, hudManager);
 
-        // 2. Inisialisasi Input
-        input = new GameInputHandler(camera);
-        Gdx.input.setInputProcessor(input); // Daftarkan pendeteksi sentuhan
+        // 3. MULTIPLEXER (Best Practice LibGDX)
+        InputMultiplexer multiplexer = new InputMultiplexer();
+        multiplexer.addProcessor(hudManager.getStage()); // UI menyerap input lebih dulu
+        multiplexer.addProcessor(inputHandler);          // Sisanya dilempar ke Kamera 3D
+        Gdx.input.setInputProcessor(multiplexer);
 
-        // 3. Inisialisasi Dunia dan Karakter
+        // 4. Inisialisasi Dunia dan Karakter
         world = new WorldMap();
         player = new Player(camera);
 
-        // 4. Inisialisasi Antarmuka (UI)
-        hud = new HudRenderer(input);
+        // CATATAN ENGINEER:
+        // Kita TIDAK LAGI memanggil inputHandler.setPlayer(player).
+        // Karena sekarang kita memakai Data-Driven Input Architecture.
     }
 
     @Override
     public void render(float delta) {
-        delta = Math.min(delta, 0.05f); // Clamp untuk mencegah lag spike
+        // Failsafe: Cegah "Spiral of Death" jika frame drop parah (Best practice Physics Engine)
+        delta = Math.min(delta, 0.05f);
 
-        // --- 1. UPDATE LOGIC ---
-        Vector2 moveInput = input.getMoveInput();
-        boolean isSprinting = input.isSprinting();
+        // ==========================================
+        // --- DATA-DRIVEN LOGIC PIPELINE ---
+        // ==========================================
+        // 1. Input Controller membaca hardware dan memperbarui state "InputAction"
+        inputHandler.update(delta);
 
-        // Player kalkulasi posisi & animasi
-        player.handleMovement(moveInput, isSprinting, camera.getYaw(), delta);
+        // 2. Player mengonsumsi "InputAction" untuk bergerak dan animasi
+        player.processInputAndPhysics(inputHandler.getAction(), camera.getYaw(), delta);
 
-        // Kamera membuntuti player
+        // 3. AI & Kamera mengikuti Player
+        world.updateEnemies(delta, player.getPosition());
         camera.update(player.getPosition(), delta);
 
-        // --- 2. RENDER GRAFIS ---
+        // ==========================================
+        // --- RENDER PIPELINE ---
+        // ==========================================
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClearColor(0.53f, 0.81f, 0.98f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 
-        // Gambar Dunia
         world.render(camera.getCam());
-        // Gambar Pemain
         player.render();
-        // Gambar Joystick & Teks
-        hud.render(player.getPosition(), camera.getYaw());
 
-        // Di dalam method render() di GameScreen.java:
-
-// Player kalkulasi posisi & animasi
-        player.handleMovement(moveInput, isSprinting, camera.getYaw(), delta);
-
-// NYALAKAN KECERDASAN BUATAN MUSUH:
-        world.updateEnemies(delta, player.getPosition());
-
-// ... kode render ke layar ...
+        // RENDER 2D UI (HARUS PALING TERAKHIR)
+        hudManager.updateAndRender(player.getPosition(), camera.getYaw());
     }
 
     @Override
     public void resize(int width, int height) {
         camera.resize(width, height);
-        hud.resize(width, height);
+        hudManager.resize(width, height);
     }
 
     @Override public void pause()  {}
@@ -89,9 +90,9 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-        // Bersihkan seluruh memori dari setiap komponen
+        // Mencegah Memory Leak (Best Practice Lifecycle)
         player.dispose();
         world.dispose();
-        hud.dispose();
+        hudManager.dispose();
     }
 }
