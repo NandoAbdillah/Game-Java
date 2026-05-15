@@ -252,10 +252,15 @@ public class Player extends Entity {
         }
     }
 
+    // =========================================================
+    // --- ANIMATION CONTROLLER DENGAN VALIDASI DATA KETAT ---
+    // =========================================================
     private void changeState(State newState, boolean force) {
         if (!force && currentState == newState && newState.priority < 2) return;
 
+        State previousState = this.currentState;
         this.currentState = newState;
+
         String animName = "";
         float transitionTime = 0.15f;
         int loops = -1;
@@ -268,30 +273,54 @@ public class Player extends Entity {
             case CROUCH_WALK: animName = "CrouchWalk"; break;
 
             case JUMP:        animName = "Jump"; loops = 1; transitionTime = 0.1f; break;
-            case JUMP_RUN:    animName = "JumpRun"; loops = 1; transitionTime = 0.1f; break;
-
+            case THROW:       animName = "Throw"; loops = 1; transitionTime = 0.1f; break;
             case COMBAT:      animName = "Combat"; loops = 1; transitionTime = 0.05f; break;
             case KICK:        animName = "Kick"; loops = 1; transitionTime = 0.05f; break;
-            case THROW:       animName = "Throw"; loops = 1; transitionTime = 0.1f; break;
             case HEAL:        animName = "Heal1"; loops = 1; transitionTime = 0.2f; break;
             case EMOTE:       animName = "Emote1"; loops = 1; transitionTime = 0.2f; break;
             case DYING:       animName = "Die"; loops = 1; transitionTime = 0.3f; break;
         }
 
         if (!animName.isEmpty() && (!animName.equals(currentAnimName) || force || loops == 1)) {
+
+            // =======================================================
+            // [VALIDASI KETAT TECHNICAL ANIMATOR]
+            // =======================================================
+            com.badlogic.gdx.graphics.g3d.model.Animation checkAnim = playerScene.modelInstance.getAnimation(animName);
+
+            if (checkAnim == null) {
+                Gdx.app.error("ENGINE_ERROR", "Animasi '" + animName + "' tidak ada di dalam ModelInstance!");
+                this.currentState = previousState;
+//                returnToIdle();
+                return;
+            }
+
+            // CEK DURASI: Jika durasi 0, matikan crossfade agar sistem tidak crash (Divide by Zero)
+            if (checkAnim.duration <= 0.01f) {
+                Gdx.app.error("ENGINE_WARNING", "Durasi Animasi '" + animName + "' adalah 0! (Cuma 1 keyframe). Crossfade dimatikan paksa.");
+                transitionTime = 0f;
+            }
+            // =======================================================
+
             currentAnimName = animName;
+
             try {
+                // Listener untuk One-Shot animation
+                AnimationController.AnimationListener actionListener = new AnimationController.AnimationListener() {
+                    @Override public void onEnd(AnimationController.AnimationDesc animation) { actionFinished(); }
+                    @Override public void onLoop(AnimationController.AnimationDesc animation) {}
+                };
+
                 if (loops == 1) {
-                    animationController.animate(animName, loops, 1f, new AnimationController.AnimationListener() {
-                        @Override public void onEnd(AnimationController.AnimationDesc animation) { actionFinished(); }
-                        @Override public void onLoop(AnimationController.AnimationDesc animation) {}
-                    }, transitionTime);
+                    animationController.animate(animName, loops, 1f, actionListener, transitionTime);
                 } else {
                     animationController.animate(animName, loops, 1f, null, transitionTime);
                 }
             } catch (Exception e) {
-                Gdx.app.log("ANIMATION", "Gagal play: " + animName);
-                actionFinished(); // Failsafe
+                // Tampilkan full log error dari LibGDX jika masih gagal
+                Gdx.app.error("ENGINE_CRITICAL", "Gagal memutar animasi '" + animName + "'! Pesan sistem: " + e.getMessage(), e);
+                this.currentState = previousState;
+//                returnToIdle();
             }
         }
     }
