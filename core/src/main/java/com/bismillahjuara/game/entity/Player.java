@@ -8,41 +8,29 @@ import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
-import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
-import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
-import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.bismillahjuara.game.camera.OrbitCamera;
+import com.bismillahjuara.game.camera.AdvancedCameraSystem;
+import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.input.InputAction;
 
 import net.mgsx.gltf.loaders.glb.GLBLoader;
-import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
-import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 public class Player extends Entity {
 
-    // =========================================================
-    // 1. STATE MACHINE & PRIORITY SYSTEM
-    // =========================================================
     public enum State {
         IDLE(0), WALK(0), RUN(0), CROUCH_IDLE(0), CROUCH_WALK(0), COMBAT_IDLE(0),
         JUMP(1), JUMP_RUN(1),
         THROW(2), KICK(2), COMBAT(2), EMOTE(2), HEAL(2),
         DYING(99);
-
         public final int priority;
         State(int priority) { this.priority = priority; }
     }
 
-    // =========================================================
-    // 2. KINEMATICS & MOVEMENT SETTINGS
-    // =========================================================
     private static final float SPEED_WALK = 6f;
     private static final float SPEED_RUN = 14f;
     private static final float SPEED_CROUCH = 3f;
@@ -56,9 +44,6 @@ public class Player extends Entity {
     private Vector2 currentVelocity2D = new Vector2();
     private float verticalVelocity = 0f;
 
-    // =========================================================
-    // 3. LOGIC VARIABLES
-    // =========================================================
     private State currentState = State.IDLE;
     private String currentAnimName = "";
 
@@ -71,33 +56,23 @@ public class Player extends Entity {
     private float bufferTimer = 0f;
     private static final float BUFFER_WINDOW = 0.3f;
 
-    private SceneManager sceneManager;
+    // --- FIX RENDER ARCHITECTURE ---
+    private GameContext context;
     private SceneAsset sceneAsset;
     private Scene playerScene;
     private AnimationController animationController;
     private float skalaKarakter = 4.0f;
 
-    public Player(OrbitCamera camera) {
+    // Constructor sekarang wajib minta GameContext agar terhubung dengan dunia
+    public Player(GameContext context) {
         super(new Vector3(0, PLAYER_HEIGHT, 0));
-        setupGLTF(camera);
+        this.context = context;
+        setupGLTF();
     }
 
-    private void setupGLTF(OrbitCamera camera) {
-        DefaultShader.Config config = new DefaultShader.Config();
-        config.numBones = 80;
-        DepthShader.Config depthConfig = new DepthShader.Config();
-        depthConfig.numBones = 80;
-
-        sceneManager = new SceneManager(new DefaultShaderProvider(config), new DepthShaderProvider(depthConfig));
-        sceneManager.setCamera(camera.getCam());
-
-        sceneManager.setAmbientLight(0.6f);
-        DirectionalLightEx sunLight = new DirectionalLightEx();
-        sunLight.direction.set(-1f, -1f, -0.4f).nor();
-        sunLight.color.set(Color.WHITE);
-        sunLight.intensity = 1.0f;
-        sceneManager.environment.add(sunLight);
-
+    private void setupGLTF() {
+        // KITA HAPUS INTERNAL SCENEMANAGER.
+        // Rendering sekarang murni tugasnya RenderPipeline!
         sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/TimunAnim.glb"));
         playerScene = new Scene(sceneAsset.scene);
 
@@ -111,19 +86,26 @@ public class Player extends Entity {
         applyTransform();
         animationController = new AnimationController(playerScene.modelInstance);
         changeState(State.IDLE, true);
-        sceneManager.addScene(playerScene);
+
+        // INILAH KUNCINYA: Daftarkan model player ini ke SceneRenderer Global milik Context!
+        if (context.sceneRenderer != null) {
+            context.sceneRenderer.addScene(playerScene);
+        } else {
+            Gdx.app.error("PLAYER", "CRITICAL ERROR: SceneRenderer null di Context!");
+        }
     }
 
     @Override
     public void update(float delta) {}
 
-    // =========================================================
-    // --- MAIN GAME LOOP (Membaca Niat Player + Physics) ---
-    // =========================================================
     public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
         if (currentState == State.DYING) return;
 
-        // 1. TERJEMAHKAN TRANSIENT ACTION MENJADI STATE REQUEST
+        // --- SISTEM TOGGLE KAMERA V (Transisi FPS / TPS) ---
+        if (input.toggleCameraPressed) {
+            context.camera.toggleMode();
+        }
+
         if (input.diePressed) requestState(State.DYING);
         if (input.healPressed) requestState(State.HEAL);
         if (input.emotePressed) requestState(State.EMOTE);
@@ -146,7 +128,6 @@ public class Player extends Entity {
             }
         }
 
-        // Reset buffer timers
         if (bufferTimer > 0) bufferTimer -= delta;
         else bufferedState = null;
 
@@ -155,7 +136,6 @@ public class Player extends Entity {
             if (combatModeTimer <= 0) isCombatMode = false;
         }
 
-        // 2. KINEMATIKA VERTIKAL (Gravity)
         verticalVelocity += GRAVITY * delta;
         position.y += verticalVelocity * delta;
         boolean isGrounded = position.y <= PLAYER_HEIGHT;
@@ -168,7 +148,6 @@ public class Player extends Entity {
             }
         }
 
-        // 3. KINEMATIKA HORIZONTAL (Acceleration & Input Vector)
         boolean hasInput = (input.moveX != 0 || input.moveY != 0);
         Vector2 targetVelocity2D = new Vector2();
 
@@ -177,7 +156,6 @@ public class Player extends Entity {
                 float targetSpeed = SPEED_WALK;
                 State locState = State.WALK;
 
-                // Support Crouched Hold & Toggle hybrid
                 boolean crouchMode = isCrouching || input.crouchHeld;
 
                 if (crouchMode) {
@@ -194,7 +172,6 @@ public class Player extends Entity {
                 float rightX   =  MathUtils.cos(yawRad);
                 float rightZ   = -MathUtils.sin(yawRad);
 
-                // Move calculation relative to camera
                 targetVelocity2D.x = (forwardX * input.moveY + rightX * input.moveX) * targetSpeed;
                 targetVelocity2D.y = (forwardZ * input.moveY + rightZ * input.moveX) * targetSpeed;
 
@@ -210,7 +187,7 @@ public class Player extends Entity {
                 }
             }
         } else {
-            targetVelocity2D.setZero(); // Ngerem karena sedang action (Lempar/Mukul)
+            targetVelocity2D.setZero();
         }
 
         float accelRate = hasInput ? ACCELERATION : DECELERATION;
@@ -228,9 +205,6 @@ public class Player extends Entity {
         applyTransform();
     }
 
-    // =========================================================
-    // --- ANIMATION CONTROLLER BLENDING ---
-    // =========================================================
     private void requestState(State requestedState) {
         if (currentState == State.DYING) return;
 
@@ -252,15 +226,10 @@ public class Player extends Entity {
         }
     }
 
-    // =========================================================
-    // --- ANIMATION CONTROLLER DENGAN VALIDASI DATA KETAT ---
-    // =========================================================
     private void changeState(State newState, boolean force) {
         if (!force && currentState == newState && newState.priority < 2) return;
 
-        State previousState = this.currentState;
         this.currentState = newState;
-
         String animName = "";
         float transitionTime = 0.15f;
         int loops = -1;
@@ -271,56 +240,29 @@ public class Player extends Entity {
             case RUN:         animName = "Run"; break;
             case CROUCH_IDLE: animName = "CrouchIdle"; break;
             case CROUCH_WALK: animName = "CrouchWalk"; break;
-
             case JUMP:        animName = "Jump"; loops = 1; transitionTime = 0.1f; break;
-            case THROW:       animName = "Throw"; loops = 1; transitionTime = 0.1f; break;
+            case JUMP_RUN:    animName = "JumpRun"; loops = 1; transitionTime = 0.1f; break;
             case COMBAT:      animName = "Combat"; loops = 1; transitionTime = 0.05f; break;
             case KICK:        animName = "Kick"; loops = 1; transitionTime = 0.05f; break;
+            case THROW:       animName = "Throw"; loops = 1; transitionTime = 0.1f; break;
             case HEAL:        animName = "Heal1"; loops = 1; transitionTime = 0.2f; break;
             case EMOTE:       animName = "Emote1"; loops = 1; transitionTime = 0.2f; break;
             case DYING:       animName = "Die"; loops = 1; transitionTime = 0.3f; break;
         }
 
         if (!animName.isEmpty() && (!animName.equals(currentAnimName) || force || loops == 1)) {
-
-            // =======================================================
-            // [VALIDASI KETAT TECHNICAL ANIMATOR]
-            // =======================================================
-            com.badlogic.gdx.graphics.g3d.model.Animation checkAnim = playerScene.modelInstance.getAnimation(animName);
-
-            if (checkAnim == null) {
-                Gdx.app.error("ENGINE_ERROR", "Animasi '" + animName + "' tidak ada di dalam ModelInstance!");
-                this.currentState = previousState;
-//                returnToIdle();
-                return;
-            }
-
-            // CEK DURASI: Jika durasi 0, matikan crossfade agar sistem tidak crash (Divide by Zero)
-            if (checkAnim.duration <= 0.01f) {
-                Gdx.app.error("ENGINE_WARNING", "Durasi Animasi '" + animName + "' adalah 0! (Cuma 1 keyframe). Crossfade dimatikan paksa.");
-                transitionTime = 0f;
-            }
-            // =======================================================
-
             currentAnimName = animName;
-
             try {
-                // Listener untuk One-Shot animation
-                AnimationController.AnimationListener actionListener = new AnimationController.AnimationListener() {
-                    @Override public void onEnd(AnimationController.AnimationDesc animation) { actionFinished(); }
-                    @Override public void onLoop(AnimationController.AnimationDesc animation) {}
-                };
-
                 if (loops == 1) {
-                    animationController.animate(animName, loops, 1f, actionListener, transitionTime);
+                    animationController.animate(animName, loops, 1f, new AnimationController.AnimationListener() {
+                        @Override public void onEnd(AnimationController.AnimationDesc animation) { actionFinished(); }
+                        @Override public void onLoop(AnimationController.AnimationDesc animation) {}
+                    }, transitionTime);
                 } else {
                     animationController.animate(animName, loops, 1f, null, transitionTime);
                 }
             } catch (Exception e) {
-                // Tampilkan full log error dari LibGDX jika masih gagal
-                Gdx.app.error("ENGINE_CRITICAL", "Gagal memutar animasi '" + animName + "'! Pesan sistem: " + e.getMessage(), e);
-                this.currentState = previousState;
-//                returnToIdle();
+                actionFinished();
             }
         }
     }
@@ -345,18 +287,25 @@ public class Player extends Entity {
 
     private void applyTransform() {
         if (playerScene != null) {
+            // FIX Kamera FPS: Saat FPS, model disembunyikan agar kita tidak melihat bagian dalam tengkorak
+            boolean isFPS = (context.camera != null && context.camera.getCurrentMode() == AdvancedCameraSystem.CameraMode.FIRST_PERSON);
+            float renderScale = isFPS ? 0.0f : skalaKarakter;
+
             playerScene.modelInstance.transform
                 .setToTranslation(position)
                 .rotate(Vector3.Y, yaw)
-                .scale(skalaKarakter, skalaKarakter, skalaKarakter);
+                .scale(renderScale, renderScale, renderScale);
         }
+        // PENTING: Update animasi wajib ditaruh di sini agar animasinya berdenyut!
         if (animationController != null) animationController.update(Gdx.graphics.getDeltaTime());
-        if (sceneManager != null) sceneManager.update(Gdx.graphics.getDeltaTime());
     }
 
-    public void render() { if (sceneManager != null) sceneManager.render(); }
+    // Fungsi Render pribadi dihilangkan (KINI TUGAS SCENE RENDERER)
+
     public void dispose() {
-        if (sceneManager != null) sceneManager.dispose();
+        if (context.sceneRenderer != null && playerScene != null) {
+            context.sceneRenderer.removeScene(playerScene); // Hapus bersih saat memory dealokasi
+        }
         if (sceneAsset != null) sceneAsset.dispose();
     }
 }
