@@ -73,7 +73,7 @@ public class Player extends Entity {
     private void setupGLTF() {
         // KITA HAPUS INTERNAL SCENEMANAGER.
         // Rendering sekarang murni tugasnya RenderPipeline!
-        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/TimunAnim.glb"));
+        sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/Timun.glb"));
         playerScene = new Scene(sceneAsset.scene);
 
         for (Material material : playerScene.modelInstance.materials) {

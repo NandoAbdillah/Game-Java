@@ -1,73 +1,121 @@
 package com.bismillahjuara.game.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
 import com.bismillahjuara.game.transitions.FadeTransition;
-import com.bismillahjuara.game.ui.AnimatedButton;
-import com.bismillahjuara.game.ui.MenuUIManager;
+import com.bismillahjuara.game.ui.AnimatedImageButton;
 
 public class MainMenuScreen extends BaseScreen {
 
     private Table mainTable;
-    private Skin skin;
+
+    // --- PENYIMPANAN TEKSTUR (Wajib agar bisa di-dispose nanti) ---
+    private Texture titleTex;
+    private Texture btnNewGameTex;
+    private Texture btnContinueTex;
+    private Texture btnStoryTex;     // KEMBALI HADIR!
+    private Texture btnSettingsTex;
+    private Texture btnCreditsTex;   // KEMBALI HADIR!
+    private Texture btnExitTex;
+
+    // List penampung agar gampang dibersihkan
+    private Array<Texture> loadedTextures;
 
     public MainMenuScreen() {
         super();
-        this.skin = MenuUIManager.getInstance().skin;
+        loadedTextures = new Array<>();
+        loadAssets();
         setupUI();
         animateEntrance();
     }
 
-    private void setupUI() {
-        // TODO: Nanti di sini pasang Parallax Background Image atau Video Cinematic
+    private void loadAssets() {
+        // TODO: Sesuaikan nama file PNG-mu di sini!
+        // Pastikan file-file ini ada di folder android/assets/ui/
+        try {
+            titleTex       = loadTex("ui/TITLE.png");
+            btnNewGameTex  = loadTex("ui/NEW_GAME.png");
+            btnContinueTex = loadTex("ui/CONTINUE.png");
+            btnStoryTex    = loadTex("ui/STORY_LOG.png");
+            btnSettingsTex = loadTex("ui/SETTINGS.png");
+            btnCreditsTex  = loadTex("ui/CREDIT.png");
+            btnExitTex     = loadTex("ui/EXIT.png");
+        } catch (Exception e) {
+            Gdx.app.error("UI_ASSETS", "Gagal load gambar PNG! Pastikan nama file benar.", e);
+        }
+    }
 
+    // Helper method agar tekstur otomatis masuk ke daftar pembersihan
+    private Texture loadTex(String path) {
+        Texture tex = new Texture(Gdx.files.internal(path));
+        // Matikan filter blur agar gambar tetap tajam kalau di-scale
+        tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        loadedTextures.add(tex);
+        return tex;
+    }
+
+    private void setupUI() {
         mainTable = new Table();
         mainTable.setFillParent(true);
-        // Menu ala AAA RPG modern biasanya condong di kiri/kanan, kita taruh kiri dengan padding.
         mainTable.left().padLeft(150);
 
-        // Judul Game
-        Label title = new Label("TIMUN\nThe Soil of Debt", skin, "title");
-        title.setAlignment(Align.left);
-        mainTable.add(title).padBottom(80).left().row();
+        // 1. JUDUL GAME (MURNI GAMBAR PNG)
+        if (titleTex != null) {
+            Image titleImage = new Image(titleTex);
+            // Kamu bisa mengatur ukurannya di sini secara spesifik
+            mainTable.add(titleImage).size(600, 200).padBottom(80).left().row();
+        }
 
-        // Pembuatan Tombol menggunakan komponen cerdas kita
-        addMenuButton("New Game", new Runnable() {
-            @Override public void run() { startGame(); }
-        });
+        // 2. TOMBOL-TOMBOL (MURNI GAMBAR PNG) - Sesuai urutan aslinya!
 
-        addMenuButton("Continue", new Runnable() {
-            @Override public void run() { /* TODO: Load Save Game */ }
-        });
+        if (btnNewGameTex != null) {
+            addMenuImageButton(btnNewGameTex, new Runnable() {
+                @Override public void run() { startGame(); }
+            });
+        }
 
-        addMenuButton("Story Log", new Runnable() {
-            @Override public void run() { ScreenManager.getInstance().setScreen(new StoryMenuScreen(), new FadeTransition(0.5f)); }
-        });
+        if (btnContinueTex != null) {
+            addMenuImageButton(btnContinueTex, new Runnable() {
+                @Override public void run() { /* TODO: Load Save Game */ }
+            });
+        }
 
-        addMenuButton("Settings", new Runnable() {
-            @Override public void run() { ScreenManager.getInstance().setScreen(new SettingsScreen(), new FadeTransition(0.5f)); }
-        });
+        if (btnStoryTex != null) {
+            addMenuImageButton(btnStoryTex, new Runnable() {
+                @Override public void run() { ScreenManager.getInstance().setScreen(new StoryMenuScreen(), new FadeTransition(0.5f)); }
+            });
+        }
 
-        addMenuButton("Credits", new Runnable() {
-            @Override public void run() { ScreenManager.getInstance().setScreen(new CreditsScreen(), new FadeTransition(0.5f)); }
-        });
+        if (btnSettingsTex != null) {
+            addMenuImageButton(btnSettingsTex, new Runnable() {
+                @Override public void run() { ScreenManager.getInstance().setScreen(new SettingsScreen(), new FadeTransition(0.5f)); }
+            });
+        }
 
-        addMenuButton("Exit Nightmare", new Runnable() {
-            @Override public void run() { Gdx.app.exit(); }
-        });
+        if (btnCreditsTex != null) {
+            addMenuImageButton(btnCreditsTex, new Runnable() {
+                @Override public void run() { ScreenManager.getInstance().setScreen(new CreditsScreen(), new FadeTransition(0.5f)); }
+            });
+        }
+
+        if (btnExitTex != null) {
+            addMenuImageButton(btnExitTex, new Runnable() {
+                @Override public void run() { Gdx.app.exit(); }
+            });
+        }
 
         stage.addActor(mainTable);
     }
 
-    private void addMenuButton(String text, final Runnable action) {
-        AnimatedButton btn = new AnimatedButton(text, skin, "default");
+    private void addMenuImageButton(Texture texture, final Runnable action) {
+        AnimatedImageButton btn = new AnimatedImageButton(texture);
         btn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -75,8 +123,8 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        // Setup layout per tombol
-        mainTable.add(btn).size(300, 70).padBottom(15).left().row();
+        // Setup ukuran dasar tombol PNG-nya (Misal 300x80 pixel)
+        mainTable.add(btn).size(300, 80).padBottom(20).left().row();
     }
 
     private void animateEntrance() {
@@ -84,19 +132,31 @@ public class MainMenuScreen extends BaseScreen {
         float delay = 0f;
         for (com.badlogic.gdx.scenes.scene2d.Actor actor : mainTable.getChildren()) {
             actor.addAction(Actions.sequence(
-                Actions.alpha(0f), // Mulai transparan
-                Actions.moveBy(-50f, 0f), // Geser kiri 50px
+                Actions.alpha(0f),
+                Actions.moveBy(-50f, 0f),
                 Actions.delay(delay),
                 Actions.parallel(
                     Actions.fadeIn(0.5f, Interpolation.fade),
-                    Actions.moveBy(50f, 0f, 0.5f, Interpolation.circleOut) // Memantul elegan
+                    Actions.moveBy(50f, 0f, 0.5f, Interpolation.circleOut)
                 )
             ));
-            delay += 0.1f; // Tombol berikutnya telat 0.1 detik (Efek Cascade/Tarik beruntun)
+            delay += 0.15f; // Jeda sedikit lebih lama agar animasinya terasa dramatis
         }
     }
 
     private void startGame() {
         ScreenManager.getInstance().setScreen(new StoryIntroScreen(), new FadeTransition(1.0f));
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+
+        // PENTING SEKALI: Bersihkan semua RAM dari gambar PNG saat menu ini ditutup!
+        // Inilah yang mencegah game kamu Crash atau Not Responding.
+        for (Texture tex : loadedTextures) {
+            if (tex != null) tex.dispose();
+        }
+        loadedTextures.clear();
     }
 }
