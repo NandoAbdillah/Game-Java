@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.bismillahjuara.game.screens.ScreenManager;
 import com.bismillahjuara.game.screens.SplashScreen;
 import com.bismillahjuara.game.settings.SettingsManager;
+import com.bismillahjuara.game.ui.MenuUIManager;
 
 public class Main extends Game {
 
@@ -30,6 +31,6 @@ public class Main extends Game {
     public void dispose() {
         // Bersihkan seluruh memori dari ScreenManager dan UIManager
         ScreenManager.getInstance().dispose();
-        com.bismillahjuara.game.ui.MenuUIManager.getInstance().dispose();
+        MenuUIManager.getInstance().dispose();
     }
 }

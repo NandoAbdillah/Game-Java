@@ -5,9 +5,9 @@ package com.bismillahjuara.game.core;
  * Sangat penting untuk menghentikan update Physics saat game di-pause atau cutscene.
  */
 public enum GameplayState {
-    INITIALIZING, // Sedang dibangun oleh AsyncLoader
-    PLAYING,      // Normal gameplay
-    PAUSED,       // Menu pause terbuka
-    CUTSCENE,     // Sedang memutar dialog/animasi cerita (Input player dimatikan)
-    GAME_OVER     // Pemain mati
+    INITIALIZING, // Sedang load/build oleh AsyncLoader
+    PLAYING,      // normal gameplay
+    PAUSED,       // menu pause terbuka
+    CUTSCENE,     // sedang memutar dialog/animasi cerita (input player dimatikan)
+    GAME_OVER     // pemain mati
 }
