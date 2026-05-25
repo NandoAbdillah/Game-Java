@@ -11,8 +11,7 @@ import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 /**
- * Manager Grafis 3D Tertinggi.
- * Menampung semua model (Scene) dan merendernya dengan Shader yang seragam.
+ * Manager Grafis 3D Tertinggi.Menampung semua model (Scene) dan merendernya dengan Shader yang seragam.
  */
 public class SceneRenderer {
     private SceneManager sceneManager;
