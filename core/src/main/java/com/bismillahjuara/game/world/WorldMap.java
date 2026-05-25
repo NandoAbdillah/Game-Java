@@ -111,7 +111,7 @@ public class WorldMap {
 
         // LOAD FILE Map.glb
         // PASTIKAN NAMA DAN FOLDERNYA BENAR! (Misal: ada di android/assets/models/Map.glb)
-        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Map.glb"));
+        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps.glb"));
         mapScene = new Scene(mapAsset.scene);
 
         sceneManager.addScene(mapScene);
