@@ -14,7 +14,7 @@ public class AdvancedCameraSystem {
     private PerspectiveCamera cam;
     private CameraMode currentMode = CameraMode.THIRD_PERSON;
 
-    // --- KONSTANTA JARAK & OFFSET ---
+    //  KONSTANTA JARAK & OFFSET
     private float targetTpsDistance = 12f; // Sekarang dinamis bisa di-zoom!
     private static final float MIN_TPS_DIST = 4f;
     private static final float MAX_TPS_DIST = 25f;
@@ -24,7 +24,7 @@ public class AdvancedCameraSystem {
     private static final float FPS_HEIGHT_OFFSET = 3.5f;
     private static final float TRANSITION_SPEED = 6f;
 
-    // --- STATE KAMERA ---
+    // STATE KAMERA
     private float currentDistance = 12f;
     private float currentHeightOffset = TPS_HEIGHT_OFFSET;
 
@@ -51,7 +51,6 @@ public class AdvancedCameraSystem {
     }
 
     public void update(Vector3 targetPos, float delta) {
-        // Gunakan targetTpsDistance yang dinamis
         float targetDist = (currentMode == CameraMode.THIRD_PERSON) ? targetTpsDistance : FPS_DISTANCE;
         float targetHeight = (currentMode == CameraMode.THIRD_PERSON) ? TPS_HEIGHT_OFFSET : FPS_HEIGHT_OFFSET;
 
@@ -100,7 +99,7 @@ public class AdvancedCameraSystem {
         this.targetPitch = MathUtils.clamp(this.targetPitch + deltaPitch, CAM_PITCH_MIN, CAM_PITCH_MAX);
     }
 
-    // --- FUNGSI ZOOM BARU UNTUK SCROLL / PINCH ---
+    // --- FUNGSI ZOOM SCROLL / PINCH ---
     public void addZoom(float amount) {
         if (currentMode == CameraMode.THIRD_PERSON) {
             targetTpsDistance = MathUtils.clamp(targetTpsDistance + amount, MIN_TPS_DIST, MAX_TPS_DIST);
