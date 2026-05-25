@@ -56,14 +56,12 @@ public class Player extends Entity {
     private float bufferTimer = 0f;
     private static final float BUFFER_WINDOW = 0.3f;
 
-    // --- FIX RENDER ARCHITECTURE ---
     private GameContext context;
     private SceneAsset sceneAsset;
     private Scene playerScene;
     private AnimationController animationController;
     private float skalaKarakter = 4.0f;
 
-    // Constructor sekarang wajib minta GameContext agar terhubung dengan dunia
     public Player(GameContext context) {
         super(new Vector3(0, PLAYER_HEIGHT, 0));
         this.context = context;
@@ -71,8 +69,7 @@ public class Player extends Entity {
     }
 
     private void setupGLTF() {
-        // KITA HAPUS INTERNAL SCENEMANAGER.
-        // Rendering sekarang murni tugasnya RenderPipeline!
+        // kita hapus internal SCENEMANAGER
         sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/TimunAnim2.glb"));
         playerScene = new Scene(sceneAsset.scene);
 
@@ -87,7 +84,7 @@ public class Player extends Entity {
         animationController = new AnimationController(playerScene.modelInstance);
         changeState(State.IDLE, true);
 
-        // INILAH KUNCINYA: Daftarkan model player ini ke SceneRenderer Global milik Context!
+        // Daftarkan model player  ke SceneRenderer Global milik Context
         if (context.sceneRenderer != null) {
             context.sceneRenderer.addScene(playerScene);
         } else {
@@ -101,7 +98,7 @@ public class Player extends Entity {
     public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
         if (currentState == State.DYING) return;
 
-        // --- SISTEM TOGGLE KAMERA V (Transisi FPS / TPS) ---
+        // SISTEM TOGGLE KAMERA V
         if (input.toggleCameraPressed) {
             context.camera.toggleMode();
         }

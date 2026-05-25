@@ -24,8 +24,7 @@ import net.mgsx.gltf.scene3d.scene.SceneAsset;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 /**
- * SukmaGowong - Enemy tipe Chaser.
- * Memiliki state AI: Mendekat pelan (Crawl) -> Lari cepat (Run) -> Serang (Melee) -> Mati (Die).
+ * SukmaGowong - Enemy tipe Chaser Memiliki state AI: Mendekat pelan (Crawl) -> Lari cepat (Run) -> Serang (Melee) -> Mati (Die).
  */
 public class SukmaGowong extends Entity {
 
@@ -191,8 +190,7 @@ public class SukmaGowong extends Entity {
         this.currentState = newState;
         this.stateTimer = 0f;
 
-        // Ubah animasi berdasarkan state baru
-        // (Pastikan nama animasi sesuai dengan yang ada di file Blender kamu)
+        // Ubah animasi berdasarkan state baru (Pastikan nama animasi sesuai dengan yang ada di file Blender kamu)
         try {
             switch (newState) {
                 case IDLE:  animationController.animate("Idle", -1, 1f, null, 0.2f); break;
@@ -204,13 +202,13 @@ public class SukmaGowong extends Entity {
                 default: break;
             }
         } catch (Exception e) {
-            // Abaikan error jika nama animasi belum ada/salah ketik
+            // abaikan error jika nama animasi belum ada/salah ketik
         }
     }
 
     @Override
     public void update(float delta) {
-        // Implementasi wajib dari Entity, tapi kita pakai updateAI agar lebih spesifik
+        // implementasi wajib dari Entity, tapi kita pakai updateAI agar lebih spesifik
     }
 
     public void render(PerspectiveCamera cam) {
