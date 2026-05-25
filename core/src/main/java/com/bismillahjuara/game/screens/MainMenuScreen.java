@@ -16,7 +16,7 @@ public class MainMenuScreen extends BaseScreen {
 
     private Table mainTable;
 
-    // --- PENYIMPANAN TEKSTUR (Wajib agar bisa di-dispose nanti) ---
+    // PENYIMPANAN TEKSTUR
     private Texture titleTex;
     private Texture btnNewGameTex;
     private Texture btnContinueTex;
@@ -66,14 +66,13 @@ public class MainMenuScreen extends BaseScreen {
         mainTable.setFillParent(true);
         mainTable.left().padLeft(150);
 
-        // 1. JUDUL GAME (MURNI GAMBAR PNG)
+        // JUDUL GAME
         if (titleTex != null) {
             Image titleImage = new Image(titleTex);
-            // Kamu bisa mengatur ukurannya di sini secara spesifik
             mainTable.add(titleImage).size(600, 200).padBottom(80).left().row();
         }
 
-        // 2. TOMBOL-TOMBOL (MURNI GAMBAR PNG) - Sesuai urutan aslinya!
+        // TOMBOL-TOMBOL (MURNI GAMBAR PNG)
 
         if (btnNewGameTex != null) {
             addMenuImageButton(btnNewGameTex, new Runnable() {
@@ -123,12 +122,12 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        // Setup ukuran dasar tombol PNG-nya (Misal 300x80 pixel)
+        // Setup ukuran dasar tombol png
         mainTable.add(btn).size(300, 80).padBottom(20).left().row();
     }
 
     private void animateEntrance() {
-        // Efek UI Masuk: Slide In dari kiri dengan Cascade (berurutan)
+        // Efek ui entrance
         float delay = 0f;
         for (com.badlogic.gdx.scenes.scene2d.Actor actor : mainTable.getChildren()) {
             actor.addAction(Actions.sequence(
@@ -140,7 +139,7 @@ public class MainMenuScreen extends BaseScreen {
                     Actions.moveBy(50f, 0f, 0.5f, Interpolation.circleOut)
                 )
             ));
-            delay += 0.15f; // Jeda sedikit lebih lama agar animasinya terasa dramatis
+            delay += 0.15f;
         }
     }
 

@@ -8,8 +8,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 /**
- * Blueprint abstrak untuk seluruh Screen di game ini.
- * Menangani boilerplate code seperti Stage, Viewport, dan Clear Color.
+ * Blueprint abstrak untuk seluruh Screen di game ini. Menangani boilerplate code seperti Stage, Viewport, dan Clear Color
  */
 public abstract class BaseScreen implements Screen {
 
