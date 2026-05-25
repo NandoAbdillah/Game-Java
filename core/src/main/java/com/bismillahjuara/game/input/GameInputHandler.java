@@ -13,7 +13,7 @@ public class GameInputHandler implements InputProcessor {
 
     private BaseInputController activeController;
 
-    // FIX: Menerima AdvancedCameraSystem, bukan OrbitCamera
+    // enerima AdvancedCameraSystem
     public GameInputHandler(AdvancedCameraSystem camera, HudManager hudManager) {
         if (IS_MOBILE) {
             activeController = new MobileInputController(camera, hudManager);

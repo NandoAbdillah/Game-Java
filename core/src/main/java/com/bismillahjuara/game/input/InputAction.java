@@ -5,11 +5,11 @@ package com.bismillahjuara.game.input;
  * Class ini murni hanya data, tidak ada logika Gdx.input di sini.
  */
 public class InputAction {
-    // --- AXIS / MOVEMENT (Analog/WASD) ---
+    // MOVEMENT
     public float moveX = 0f;
     public float moveY = 0f;
 
-    // --- HELD ACTIONS (Aksi yang ditahan) ---
+    // ACTION
     public boolean sprintHeld = false;
     public boolean crouchHeld = false;
     public boolean blockHeld = false;
@@ -27,8 +27,7 @@ public class InputAction {
     public boolean toggleCameraPressed = false;
 
     /**
-     * Memastikan semua aksi trigger di-reset setiap frame agar tidak spam.
-     * (LibGDX's isKeyJustPressed sudah otomatis, tapi method ini berguna untuk Mobile/Gamepad nanti)
+     * Memastikan semua aksi trigger di-reset setiap frame agar tidak spam. (LibGDX's isKeyJustPressed sudah otomatis, tapi method ini berguna untuk Mobile/Gamepad nanti)
      */
     public void resetTransientActions() {
         jumpPressed = false;
