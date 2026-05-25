@@ -22,11 +22,11 @@ public class MobileControlsUI {
         mainTable = new Table();
         mainTable.setFillParent(true);
 
-        // --- KIRI: JOYSTICK ---
+        // KIRI: JOYSTICK
         // Deadzone 20f agar tidak terlalu sensitif kesenggol
         joystick = new Touchpad(20f, assets.skin, "default");
 
-        // --- KANAN: CLUSTER TOMBOL AKSI ---
+        // KANAN: CLUSTER TOMBOL AKSI
         Table actionTable = new Table();
 
         btnAttack = new TextButton("ATK", assets.skin, "default");
@@ -34,7 +34,7 @@ public class MobileControlsUI {
         btnThrow = new TextButton("THROW", assets.skin, "default");
         btnCrouch = new TextButton("CROUCH", assets.skin, "default");
 
-        // Layout ala Action RPG
+        // Layout
         // Baris 1: Tombol Throw & Jump di atas
         actionTable.add(btnThrow).size(100, 100).pad(10);
         actionTable.add(btnJump).size(120, 120).pad(10).padBottom(40).row();
@@ -43,7 +43,7 @@ public class MobileControlsUI {
         actionTable.add(btnCrouch).size(100, 100).pad(10);
         actionTable.add(btnAttack).size(160, 160).pad(10); // Attack paling besar
 
-        // --- SUSUN KE LAYAR UTAMA ---
+        // SUSUN KE LAYAR UTAMA
         mainTable.bottom().left();
         // Joystick memakan ruang sebelah kiri dan didorong ke pojok bawah
         mainTable.add(joystick).size(350, 350).pad(50).expandX().left();
@@ -55,7 +55,7 @@ public class MobileControlsUI {
         return mainTable;
     }
 
-    // --- GETTER UNTUK MOBILE INPUT CONTROLLER ---
+    // GETTER UNTUK MOBILE INPUT CONTROLLER
     public float getJoystickX() { return joystick.getKnobPercentX(); }
     public float getJoystickY() { return joystick.getKnobPercentY(); }
 

@@ -35,7 +35,7 @@ public class HudAssets {
     }
 
     private void createTouchpadStyle() {
-        // 1. Background Joystick 2X LEBIH BESAR (400x400)
+        // Background Joystick  (400x400)
         Pixmap bgPixmap = new Pixmap(400, 400, Pixmap.Format.RGBA8888);
         bgPixmap.setColor(1f, 1f, 1f, 0.15f);
         bgPixmap.fillCircle(200, 200, 200);
@@ -58,7 +58,6 @@ public class HudAssets {
     }
 
     private void createButtonStyle() {
-        // Tombol saat diam (Lingkaran Abu-abu Transparan)
         Pixmap btnPixmap = new Pixmap(150, 150, Pixmap.Format.RGBA8888);
         btnPixmap.setColor(0.2f, 0.2f, 0.2f, 0.6f);
         btnPixmap.fillCircle(75, 75, 75);

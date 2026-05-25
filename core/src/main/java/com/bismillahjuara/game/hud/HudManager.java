@@ -7,8 +7,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.bismillahjuara.game.input.GameInputHandler;
 
 /**
- * Manajer UI Modern menggunakan LibGDX Scene2D.
- * Menyimpan Stage dan merender semua layer HUD (Gameplay, Controls, Debug).
+ * Manajer UI Modern menggunakan LibGDX Scene2D.Menyimpan Stage dan merender semua layer HUD (Gameplay, Controls, Debug).
  */
 public class HudManager {
     private Stage stage;
@@ -22,11 +21,11 @@ public class HudManager {
         stage = new Stage(new ScreenViewport());
         assets = new HudAssets();
 
-        // 1. Buat Debug UI
+        //  Buat Debug UI
         debugUI = new DebugUI(assets);
         stage.addActor(debugUI.getRootTable());
 
-        // 2. Buat Mobile Controls jika di HP
+        // Buat Mobile Controls jika di HP
         if (GameInputHandler.IS_MOBILE) {
             mobileControls = new MobileControlsUI(assets);
             stage.addActor(mobileControls.getRootTable());
