@@ -5,9 +5,7 @@ import com.bismillahjuara.game.assets.GameAssets;
 import com.bismillahjuara.game.screens.GameScreen;
 
 /**
- * Time-Sliced Gameplay Initializer.
- * Memecah pembuatan World, Player, dan Shader menjadi beberapa frame
- * agar Render Thread tidak pernah freeze (Anti-ANR Android).
+ * Time-Sliced Gameplay Initializer Memecah pembuatan World, Player, dan Shader menjadi beberapa frame agar Render Thread tidak pernah freeze ( Android).
  */
 public class AsyncGameplayLoader {
 
@@ -30,9 +28,8 @@ public class AsyncGameplayLoader {
         targetScreen = new GameScreen();
     }
 
-    /**
-     * Dipanggil setiap frame oleh Layar Loading.
-     * Menggunakan logika Switch-Case agar hanya 1 pekerjaan berat yang dieksekusi per frame.
+    /**Dipanggil setiap frame oleh Layar Loading.
+
      */
     public void update() {
         switch (currentState) {
