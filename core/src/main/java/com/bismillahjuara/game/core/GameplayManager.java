@@ -17,7 +17,7 @@ public class GameplayManager {
 
     public GameplayManager() {
         context = new GameContext();
-        context.sceneRenderer = new SceneRenderer(); // Instansiasi lebih dulu
+        context.sceneRenderer = new SceneRenderer();
 
         context.worldManager = new WorldManager(context);
         context.entityManager = new EntityManager(context);

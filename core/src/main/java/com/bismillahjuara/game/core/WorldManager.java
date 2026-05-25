@@ -7,25 +7,25 @@ import net.mgsx.gltf.loaders.glb.GLBLoader;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
 
-/**
- * Mengelola Environment, Terrain, dan Cuaca.
- * Disiapkan untuk World Streaming (membaca chunk peta secara dinamis).
- */
+/** Mengelola Environment, Terrain, dan Cuaca, Disiapkan untuk World Streaming (membaca chunk peta secara dinamis).*/
 public class WorldManager {
 
     private GameContext context;
     private SceneAsset mapAsset;
     private Scene mapScene;
 
+    private float mapScale = 10f;
+
     public WorldManager(GameContext context) {
         this.context = context;
     }
 
     public void initialize(SceneRenderer renderer) {
-        // TODO: Di masa depan gunakan GameAssets AssetManager agar Async!
+
         try {
-            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Map.glb"));
+            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps2.glb"));
             mapScene = new Scene(mapAsset.scene);
+            mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
             renderer.addScene(mapScene);
             Gdx.app.log("WORLD", "Map berhasil diload.");
         } catch (Exception e) {
