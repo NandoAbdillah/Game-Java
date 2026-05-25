@@ -8,23 +8,19 @@ import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 /**
- * Memaksa OpenGL untuk meng-compile Shader yang berat selama layar Loading masih menyala.
- * Mencegah "First-Frame Lag Spike" yang sangat dibenci pemain mobile.
+ * Memaksa OpenGL untuk meng-compile Shader yang berat selama layar Loading masih menyala. Mencegah "First-Frame Lag Spike"
  */
 public class ShaderWarmup {
 
     private static SceneManager warmupSceneManager;
 
-    /**
-     * Dipanggil tepat saat loading mencapai 100%, sebelum masuk ke Main Menu.
-     */
+    /** Dipanggil tepat saat loading mencapai 100%, sebelum masuk ke Main Menu */
     public static void executeWarmup() {
         Gdx.app.log("WARMUP", "Memulai kompilasi Shader 3D PBR/Default...");
 
         long startTime = System.currentTimeMillis();
 
-        // Menginisialisasi SceneManager di sini akan memaksa LibGDX membuat dan mengkompilasi Shader Program.
-        // Kompilasi shader ini bisa memakan waktu 100ms - 500ms di HP.
+        // menginisialisasi SceneManager di sini akan memaksa LibGDX membuat dan mengkompilasi Shader Program
         DefaultShader.Config config = new DefaultShader.Config();
         config.numBones = 80;
         DepthShader.Config depthConfig = new DepthShader.Config();
@@ -38,12 +34,9 @@ public class ShaderWarmup {
         long timeTaken = System.currentTimeMillis() - startTime;
         Gdx.app.log("WARMUP", "Kompilasi selesai dalam " + timeTaken + " ms.");
 
-        // TODO: Future Update - Spawn 1 model musuh dan player off-screen untuk memastikan texture cache masuk ke VRAM.
+        // TODO: Future Up - Spawn 1 model musuh dan player off-screen untuk memastikan texture cache masuk ke VRAM
     }
 
-    /**
-     * Ambil instance yang sudah di-warmup agar tidak perlu compile ulang di GameScreen.
-     */
     public static SceneManager getPrecompiledSceneManager() {
         return warmupSceneManager;
     }

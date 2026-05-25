@@ -2,9 +2,7 @@ package com.bismillahjuara.game.assets;
 
 import com.badlogic.gdx.assets.AssetManager;
 
-/**
- * Singleton Asset Manager.
- */
+
 public class GameAssets {
 
     private static GameAssets instance;
@@ -12,7 +10,7 @@ public class GameAssets {
 
     public static final String MODEL_PLAYER = "models/chars/TimunAnim.glb";
     public static final String MODEL_ENEMY = "models/enemies/SukmaGowong.glb";
-    public static final String MODEL_MAP = "models/maps/Map.glb";
+    public static final String MODEL_MAP = "models/maps/Maps.glb";
 
     private GameAssets() {
         manager = new AssetManager();
@@ -32,11 +30,11 @@ public class GameAssets {
     }
 
     public void queueGameplayAssets() {
-        // Saat ini, model 3D (Player, Map, Musuh) masih di-load secara hardcode di constructor masing-masing kelas.
-        // Metode ini disiapkan agar AsyncGameplayLoader tidak error (Method Not Found).
+        // saat ini, model 3D (Player, Map, Musuh) masih di-load secara hardcode di constructor masing" kelas.
+        // Metode ini disiapkan agar AsyncGameplayLoader tidak error (Method Not Found)
 
-        // Pura-puranya kita mendaftarkan sesuatu agar AssetManager berjalan.
-        // Nanti setelah refactor "True Async 3D", kita masukkan antreannya di sini.
+        // Nanto kita mendaftarkan sesuatu agar AssetManager berjalan.
+        // Nanti setelah refactor "True Async 3D", kita masukkan antreannya di sini
     }
 
     public void dispose() {
