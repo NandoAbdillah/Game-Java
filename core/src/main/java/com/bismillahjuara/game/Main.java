@@ -4,7 +4,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.bismillahjuara.game.screens.ScreenManager;
 import com.bismillahjuara.game.screens.SplashScreen;
+import com.bismillahjuara.game.screens.StoryIntroScreen;
 import com.bismillahjuara.game.settings.SettingsManager;
+import com.bismillahjuara.game.transitions.FadeTransition;
 import com.bismillahjuara.game.ui.MenuUIManager;
 
 public class Main extends Game {
@@ -18,7 +20,9 @@ public class Main extends Game {
         ScreenManager.getInstance().initialize(this);
 
         // 3. Masuk Intro
-        ScreenManager.getInstance().setScreen(new SplashScreen(), null);
+//        ScreenManager.getInstance().setScreen(new SplashScreen(), null);
+
+        ScreenManager.getInstance().setScreen(new StoryIntroScreen(), new FadeTransition(1.0f));
     }
 
     @Override
