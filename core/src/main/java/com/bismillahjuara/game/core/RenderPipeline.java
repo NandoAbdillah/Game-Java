@@ -33,5 +33,12 @@ public class RenderPipeline {
 
         // Render Debug
         // TODO: Buat class DebugRenderer untuk menggambar bounding box (Hitbox) collision
+
+        if (context.camera != null) {
+            sceneRenderer.render(context.camera.getCam(), delta);
+
+            // ---> TAMBAHKAN BARIS INI DI SINI <---
+            context.worldManager.renderDebug(context.camera.getCam());
+        }
     }
 }
