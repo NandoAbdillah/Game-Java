@@ -40,13 +40,13 @@ public class MainMenuScreen extends BaseScreen {
         // TODO: Sesuaikan nama file PNG-mu di sini!
         // Pastikan file-file ini ada di folder android/assets/ui/
         try {
-            titleTex       = loadTex("ui/TITLE.png");
-            btnNewGameTex  = loadTex("ui/NEW_GAME.png");
-            btnContinueTex = loadTex("ui/CONTINUE.png");
-            btnStoryTex    = loadTex("ui/STORY_LOG.png");
-            btnSettingsTex = loadTex("ui/SETTINGS.png");
-            btnCreditsTex  = loadTex("ui/CREDIT.png");
-            btnExitTex     = loadTex("ui/EXIT.png");
+            titleTex       = loadTex("ui/mainmenu/TITLE.png");
+            btnNewGameTex  = loadTex("ui/mainmenu/NEW_GAME.png");
+            btnContinueTex = loadTex("ui/mainmenu/CONTINUE.png");
+            btnStoryTex    = loadTex("ui/mainmenu/STORY_LOG.png");
+            btnSettingsTex = loadTex("ui/mainmenu/SETTINGS.png");
+            btnCreditsTex  = loadTex("ui/mainmenu/CREDIT.png");
+            btnExitTex     = loadTex("ui/mainmenu/EXIT.png");
         } catch (Exception e) {
             Gdx.app.error("UI_ASSETS", "Gagal load gambar PNG! Pastikan nama file benar.", e);
         }
