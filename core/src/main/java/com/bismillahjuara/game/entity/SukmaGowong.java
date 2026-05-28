@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
+import com.bismillahjuara.game.core.GameContext;
 
 import net.mgsx.gltf.loaders.glb.GLBLoader;
 import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
@@ -55,8 +56,11 @@ public class SukmaGowong extends Entity {
     private Scene enemyScene;
     private AnimationController animationController;
 
+
+
     public SukmaGowong(Vector3 startPos) {
-        super(startPos); // Memanggil constructor dari Entity (mengisi this.position)
+
+        super(startPos, new GameContext()); // Memanggil constructor dari Entity (mengisi this.position)
         setupGLTF();
     }
 
