@@ -53,7 +53,7 @@ public class WorldManager {
         try {
             debugRenderer = new ShapeRenderer();
 
-            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps3.glb"));
+            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps2.glb"));
             mapScene = new Scene(mapAsset.scene);
 
             mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
