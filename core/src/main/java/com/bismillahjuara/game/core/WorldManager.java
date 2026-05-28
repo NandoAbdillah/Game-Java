@@ -23,7 +23,7 @@ public class WorldManager {
     public void initialize(SceneRenderer renderer) {
 
         try {
-            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps3.glb"));
+            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps2.glb"));
             mapScene = new Scene(mapAsset.scene);
             mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
             renderer.addScene(mapScene);
