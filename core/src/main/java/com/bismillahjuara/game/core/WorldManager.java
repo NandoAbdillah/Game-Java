@@ -27,7 +27,10 @@ public class WorldManager {
     private int collisionCount = 0;
 
     private ShapeRenderer debugRenderer;
-    public boolean isDebugMode = true;
+
+    // ==========================================================
+    // FIX LAG: Matikan saklar ini (false) agar garis merah tidak dirender
+    public boolean isDebugMode = false;
 
     public WorldManager(GameContext context) {
         this.context = context;
@@ -69,7 +72,7 @@ public class WorldManager {
                 node.calculateBoundingBox(box, true);
 
                 if (box.isValid()) {
-                    // 2. KUNCI UTAMA (YANG SAYA LUPAKAN):
+                    // 2. KUNCI UTAMA:
                     // Kalikan Bounding Box dengan skala dunia (10x lipat) agar posisinya dan ukurannya pas di Map!
                     box.mul(mapScene.modelInstance.transform);
 
@@ -110,6 +113,7 @@ public class WorldManager {
             new Vector3(newPosition.x + entityRadius, newPosition.y + entityHeight, newPosition.z + entityRadius)
         );
 
+        // Pencarian tabrakan di RAM (CPU), ini SANGAT RINGAN dan tidak akan bikin lag!
         for (BoundingBox wallBox : collisionBoxes) {
             if (wallBox.intersects(entityBox)) {
                 return true;
@@ -121,6 +125,7 @@ public class WorldManager {
     public void update(float fixedDelta) {}
 
     public void renderDebug(PerspectiveCamera cam) {
+        // Karena isDebugMode = false, kode di bawah ini langsung di-skip (FPS langsung naik drastis!)
         if (!isDebugMode || debugRenderer == null || collisionBoxes.size == 0) return;
 
         debugRenderer.setProjectionMatrix(cam.combined);
