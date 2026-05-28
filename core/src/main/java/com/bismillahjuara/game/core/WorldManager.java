@@ -5,9 +5,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.LongMap;
 import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.core.SceneRenderer;
 
@@ -23,25 +25,35 @@ public class WorldManager {
 
     private float mapScale = 10f;
 
-    private Array<BoundingBox> collisionBoxes;
+    // ==========================================================
+    // AAA OPTIMIZATION: SPATIAL PARTITIONING (SISTEM AREA/CHUNK)
+    // ==========================================================
+    // Membagi dunia menjadi petak-petak (Area) berukuran 25x25 meter
+    private static final float CHUNK_SIZE = 25f;
+
+    // LongMap sangat ramah RAM HP (Zero GC). Menyimpan daftar pohon per-Area.
+    private LongMap<Array<BoundingBox>> spatialChunks;
+
+    // Array ini HANYA dipakai untuk menggambar garis merah saat mode debug nyala
+    private Array<BoundingBox> allCollisionsForDebug;
+
     private int collisionCount = 0;
+    private Vector3 tempCenter = new Vector3(); // Reuse vector untuk mencegah memori bocor
 
     private ShapeRenderer debugRenderer;
-
-    // ==========================================================
-    // FIX LAG: Matikan saklar ini (false) agar garis merah tidak dirender
-    public boolean isDebugMode = false;
+    public boolean isDebugMode = false; // Biarkan false agar enteng saat dimainkan
 
     public WorldManager(GameContext context) {
         this.context = context;
-        this.collisionBoxes = new Array<>();
+        this.spatialChunks = new LongMap<>();
+        this.allCollisionsForDebug = new Array<>();
     }
 
     public void initialize(SceneRenderer renderer) {
         try {
             debugRenderer = new ShapeRenderer();
 
-            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps2.glb"));
+            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps3.glb"));
             mapScene = new Scene(mapAsset.scene);
 
             mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
@@ -49,15 +61,23 @@ public class WorldManager {
 
             collisionCount = 0;
 
-            Gdx.app.log("WORLD", "Memulai Ekstraksi Collision...");
+            Gdx.app.log("WORLD", "Memulai Ekstraksi & Pemetaan Area Collision...");
             extractAndHideCollisions(mapScene.modelInstance.nodes);
 
             renderer.addScene(mapScene);
-            Gdx.app.log("WORLD", "Map berhasil diload! TOTAL TEMBOK GAIB TERDETEKSI: " + collisionCount);
+            Gdx.app.log("WORLD", "Map berhasil diload! TOTAL TEMBOK GAIB: " + collisionCount + " (Telah dioptimasi ke dalam Area)");
 
         } catch (Exception e) {
             Gdx.app.log("WORLD_WARNING", "Map.glb tidak ditemukan, abaikan jika masih dummy.", e);
         }
+    }
+
+    /**
+     * Membuat ID Unik untuk setiap petak tanah (Chunk).
+     * Sangat cepat karena menggunakan operasi Bitwise (Shift).
+     */
+    private long getChunkKey(int chunkX, int chunkZ) {
+        return (((long) chunkX) << 32) | (chunkZ & 0xffffffffL);
     }
 
     private void extractAndHideCollisions(Iterable<Node> nodes) {
@@ -67,20 +87,28 @@ public class WorldManager {
             if (nodeName.contains("pohon_col") || nodeName.contains("collider")) {
 
                 BoundingBox box = new BoundingBox();
-
-                // 1. CALCULATE BOUNDS: Ini menghitung kotak dalam skala lokal (1x)
                 node.calculateBoundingBox(box, true);
 
                 if (box.isValid()) {
-                    // 2. KUNCI UTAMA:
-                    // Kalikan Bounding Box dengan skala dunia (10x lipat) agar posisinya dan ukurannya pas di Map!
                     box.mul(mapScene.modelInstance.transform);
 
-                    collisionBoxes.add(box);
+                    // --- MASUKKAN KOTAK KE DALAM AREA (CHUNK) YANG TEPAT ---
+                    box.getCenter(tempCenter);
+                    int chunkX = MathUtils.floor(tempCenter.x / CHUNK_SIZE);
+                    int chunkZ = MathUtils.floor(tempCenter.z / CHUNK_SIZE);
+                    long key = getChunkKey(chunkX, chunkZ);
+
+                    Array<BoundingBox> chunk = spatialChunks.get(key);
+                    if (chunk == null) {
+                        chunk = new Array<>();
+                        spatialChunks.put(key, chunk);
+                    }
+
+                    chunk.add(box); // Masukkan ke area spesifik
+                    allCollisionsForDebug.add(box); // Masukkan ke data debug
                     collisionCount++;
                 }
 
-                // 3. Hancurkan wujud tabung putihnya
                 hideNodeAndChildren(node);
 
             } else if (node.hasChildren()) {
@@ -92,8 +120,6 @@ public class WorldManager {
     private void hideNodeAndChildren(Node node) {
         node.parts.clear();
 
-        // TRIK KASAR AAA: Karena GLTF kadang bandel, kita paksa hancurkan ukurannya jadi 0
-        // dan kita lemparkan objeknya ke bawah tanah sejauh -9999 meter!
         node.localTransform.setToScaling(0f, 0f, 0f);
         node.globalTransform.setToScaling(0f, 0f, 0f);
         node.localTransform.setTranslation(0f, -9999f, 0f);
@@ -113,26 +139,43 @@ public class WorldManager {
             new Vector3(newPosition.x + entityRadius, newPosition.y + entityHeight, newPosition.z + entityRadius)
         );
 
-        // Pencarian tabrakan di RAM (CPU), ini SANGAT RINGAN dan tidak akan bikin lag!
-        for (BoundingBox wallBox : collisionBoxes) {
-            if (wallBox.intersects(entityBox)) {
-                return true;
+        // 1. Cari tahu Player sedang berada di Area (Chunk) mana?
+        int playerChunkX = MathUtils.floor(newPosition.x / CHUNK_SIZE);
+        int playerChunkZ = MathUtils.floor(newPosition.z / CHUNK_SIZE);
+
+        // 2. Cek Area tempat Player berdiri, PLUS 8 area di sekelilingnya (Total 9 petak terdekat)
+        // Hal ini untuk mencegah tembus tembok jika player berdiri tepat di garis batas area.
+        for (int offsetX = -1; offsetX <= 1; offsetX++) {
+            for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
+
+                long key = getChunkKey(playerChunkX + offsetX, playerChunkZ + offsetZ);
+                Array<BoundingBox> localTrees = spatialChunks.get(key);
+
+                // Jika di area ini ada pohon, maka cek tabrakannya!
+                if (localTrees != null) {
+                    // Menggunakan For-Loop konvensional (Bukan foreach) agar RAM HP tidak bocor (Zero Garbage)
+                    for (int i = 0; i < localTrees.size; i++) {
+                        if (localTrees.get(i).intersects(entityBox)) {
+                            return true; // Mentok!
+                        }
+                    }
+                }
             }
         }
-        return false;
+
+        return false; // Aman!
     }
 
     public void update(float fixedDelta) {}
 
     public void renderDebug(PerspectiveCamera cam) {
-        // Karena isDebugMode = false, kode di bawah ini langsung di-skip (FPS langsung naik drastis!)
-        if (!isDebugMode || debugRenderer == null || collisionBoxes.size == 0) return;
+        if (!isDebugMode || debugRenderer == null || allCollisionsForDebug.size == 0) return;
 
         debugRenderer.setProjectionMatrix(cam.combined);
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);
         debugRenderer.setColor(Color.RED);
 
-        for (BoundingBox box : collisionBoxes) {
+        for (BoundingBox box : allCollisionsForDebug) {
             debugRenderer.box(
                 box.min.x, box.min.y, box.min.z,
                 box.getWidth(), box.getHeight(), box.getDepth()
@@ -145,6 +188,7 @@ public class WorldManager {
     public void dispose() {
         if (mapAsset != null) mapAsset.dispose();
         if (debugRenderer != null) debugRenderer.dispose();
-        collisionBoxes.clear();
+        spatialChunks.clear();
+        allCollisionsForDebug.clear();
     }
 }
