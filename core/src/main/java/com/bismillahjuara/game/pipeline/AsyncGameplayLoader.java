@@ -34,7 +34,7 @@ public class AsyncGameplayLoader {
     public void update() {
         switch (currentState) {
             case QUEUE_ASSETS:
-                Gdx.app.log("LOADER", "[1/6] Mengantre aset GLTF & Texture...");
+//                Gdx.app.log("LOADER", "[1/6] Mengantre aset GLTF & Texture...");
                 GameAssets.getInstance().queueGameplayAssets(); // TODO: Buat method ini di GameAssets nanti
                 progress = 0.1f;
                 currentState = LoadState.WAIT_ASSETS;
