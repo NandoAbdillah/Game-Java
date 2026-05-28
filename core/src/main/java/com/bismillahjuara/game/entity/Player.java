@@ -56,20 +56,17 @@ public class Player extends Entity {
     private float bufferTimer = 0f;
     private static final float BUFFER_WINDOW = 0.3f;
 
-    private GameContext context;
     private SceneAsset sceneAsset;
     private Scene playerScene;
     private AnimationController animationController;
     private float skalaKarakter = 4.0f;
 
     public Player(GameContext context) {
-        super(new Vector3(0, PLAYER_HEIGHT, 0));
-        this.context = context;
+        super(new Vector3(0, PLAYER_HEIGHT, 0), context);
         setupGLTF();
     }
 
     private void setupGLTF() {
-        // kita hapus internal SCENEMANAGER
         sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/TimunAnim2.glb"));
         playerScene = new Scene(sceneAsset.scene);
 
@@ -81,10 +78,13 @@ public class Player extends Entity {
         }
 
         applyTransform();
-        animationController = new AnimationController(playerScene.modelInstance);
-        changeState(State.IDLE, true);
 
-        // Daftarkan model player  ke SceneRenderer Global milik Context
+        // FIX ANIMASI KESURUPAN: Pakai AnimationController bawaan Scene!
+        animationController = playerScene.animationController;
+        if (animationController != null) {
+            changeState(State.IDLE, true);
+        }
+
         if (context.sceneRenderer != null) {
             context.sceneRenderer.addScene(playerScene);
         } else {
@@ -96,9 +96,9 @@ public class Player extends Entity {
     public void update(float delta) {}
 
     public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
+
         if (currentState == State.DYING) return;
 
-        // SISTEM TOGGLE KAMERA V
         if (input.toggleCameraPressed) {
             context.camera.toggleMode();
         }
@@ -192,12 +192,25 @@ public class Player extends Entity {
 
         currentVelocity2D.lerp(targetVelocity2D, accelRate * delta);
 
-        position.x += currentVelocity2D.x * delta;
-        position.z += currentVelocity2D.y * delta;
+        // =========================================================
+        // KINEMATIKA & COLLISION (Dihitung di bagian PALING BAWAH)
+        // =========================================================
+        float stepX = currentVelocity2D.x * delta;
+        float stepZ = currentVelocity2D.y * delta;
 
-        float mapLimit = 48f;
-        position.x = MathUtils.clamp(position.x, -mapLimit, mapLimit);
-        position.z = MathUtils.clamp(position.z, -mapLimit, mapLimit);
+        // Karena karakter di-scale 4.0x, kolisinya harus diperlebar agar sepadan dengan visualnya
+        float playerRadius = 1.0f;
+        float playerHeight = 4.0f;
+
+        Vector3 nextPosX = new Vector3(position.x + stepX, position.y, position.z);
+        if (context != null && context.worldManager != null && !context.worldManager.isColliding(nextPosX, playerRadius, playerHeight)) {
+            position.x += stepX;
+        }
+
+        Vector3 nextPosZ = new Vector3(position.x, position.y, position.z + stepZ);
+        if (context != null && context.worldManager != null && !context.worldManager.isColliding(nextPosZ, playerRadius, playerHeight)) {
+            position.z += stepZ;
+        }
 
         applyTransform();
     }
@@ -247,7 +260,7 @@ public class Player extends Entity {
             case DYING:       animName = "Die"; loops = 1; transitionTime = 0.3f; break;
         }
 
-        if (!animName.isEmpty() && (!animName.equals(currentAnimName) || force || loops == 1)) {
+        if (animationController != null && !animName.isEmpty() && (!animName.equals(currentAnimName) || force || loops == 1)) {
             currentAnimName = animName;
             try {
                 if (loops == 1) {
@@ -284,7 +297,6 @@ public class Player extends Entity {
 
     private void applyTransform() {
         if (playerScene != null) {
-            // FIX Kamera FPS: Saat FPS, model disembunyikan agar kita tidak melihat bagian dalam tengkorak
             boolean isFPS = (context.camera != null && context.camera.getCurrentMode() == AdvancedCameraSystem.CameraMode.FIRST_PERSON);
             float renderScale = isFPS ? 0.0f : skalaKarakter;
 
@@ -293,15 +305,11 @@ public class Player extends Entity {
                 .rotate(Vector3.Y, yaw)
                 .scale(renderScale, renderScale, renderScale);
         }
-        // PENTING: Update animasi wajib ditaruh di sini agar animasinya berdenyut!
-        if (animationController != null) animationController.update(Gdx.graphics.getDeltaTime());
     }
-
-    // Fungsi Render pribadi dihilangkan (KINI TUGAS SCENE RENDERER)
 
     public void dispose() {
         if (context.sceneRenderer != null && playerScene != null) {
-            context.sceneRenderer.removeScene(playerScene); // Hapus bersih saat memory dealokasi
+            context.sceneRenderer.removeScene(playerScene);
         }
         if (sceneAsset != null) sceneAsset.dispose();
     }
