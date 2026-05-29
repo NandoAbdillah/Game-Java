@@ -43,6 +43,7 @@ public class DesktopInputController extends BaseInputController {
         action.crouchToggled = Gdx.input.isKeyJustPressed(Input.Keys.C);
         action.diePressed = Gdx.input.isKeyJustPressed(Input.Keys.K);
         action.toggleCameraPressed = Gdx.input.isKeyJustPressed(Input.Keys.V);
+        action.pausePressed = Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
     }
 
     @Override
