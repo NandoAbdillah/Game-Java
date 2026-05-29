@@ -13,14 +13,20 @@ public class SettingsManager {
     private static SettingsManager instance;
     private SavePreferenceSystem saveSystem;
 
+    // --- ENUMS ---
+    public enum GraphicsQuality { LOW, MEDIUM, HIGH, ULTRA }
+    public enum FPSLimit {
+        FPS_30(30), FPS_60(60), FPS_90(90), FPS_120(120), UNLIMITED(0);
+        public final int value;
+        FPSLimit(int value) { this.value = value; }
+    }
+
     // --- CACHED SETTINGS ---
     public boolean fullscreen;
     public boolean vsync;
-    public int fpsLimit;
+    public FPSLimit fpsLimit;
     public float masterVolume;
-    public float bgmVolume;
-    public float sfxVolume;
-    public String graphicsPreset; // LOW, MEDIUM, HIGH, ULTRA
+    public GraphicsQuality graphicsPreset;
 
     private SettingsManager() {
         saveSystem = new SavePreferenceSystem();
@@ -35,43 +41,48 @@ public class SettingsManager {
     public void loadSettings() {
         fullscreen = saveSystem.getBoolean("fullscreen", true);
         vsync = saveSystem.getBoolean("vsync", true);
-        fpsLimit = saveSystem.getInteger("fpsLimit", 60);
         masterVolume = saveSystem.getFloat("masterVolume", 1.0f);
-        bgmVolume = saveSystem.getFloat("bgmVolume", 0.8f);
-        sfxVolume = saveSystem.getFloat("sfxVolume", 1.0f);
-        graphicsPreset = saveSystem.getString("graphicsPreset", "HIGH");
+
+        try {
+            fpsLimit = FPSLimit.valueOf(saveSystem.getString("fpsLimit", "FPS_60"));
+            graphicsPreset = GraphicsQuality.valueOf(saveSystem.getString("graphicsPreset", "HIGH"));
+        } catch (Exception e) {
+            // Failsafe jika data harddisk corrupt
+            fpsLimit = FPSLimit.FPS_60;
+            graphicsPreset = GraphicsQuality.HIGH;
+        }
     }
 
     public void saveAndApplySettings() {
-        // 1. Simpan ke Disk
         saveSystem.saveBoolean("fullscreen", fullscreen);
         saveSystem.saveBoolean("vsync", vsync);
-        saveSystem.saveInteger("fpsLimit", fpsLimit);
         saveSystem.saveFloat("masterVolume", masterVolume);
-        saveSystem.saveFloat("bgmVolume", bgmVolume);
-        saveSystem.saveFloat("sfxVolume", sfxVolume);
-        saveSystem.saveString("graphicsPreset", graphicsPreset);
+        saveSystem.saveString("fpsLimit", fpsLimit.name());
+        saveSystem.saveString("graphicsPreset", graphicsPreset.name());
         saveSystem.flush();
 
-        // 2. Aplikasikan ke Engine LibGDX
         applyToEngine();
     }
 
     public void applyToEngine() {
-        // Grafis & Resolusi (Hanya berlaku penuh di PC, Android akan otomatis menyesuaikan)
+        // 1. RESOLUSI & FULLSCREEN (Hanya dieksekusi di PC)
         if (!GameInputHandler.IS_MOBILE) {
             if (fullscreen) {
                 DisplayMode currentMode = Gdx.graphics.getDisplayMode();
                 Gdx.graphics.setFullscreenMode(currentMode);
             } else {
-                Gdx.graphics.setWindowedMode(1280, 720); // Resolusi default window
+                Gdx.graphics.setWindowedMode(1280, 720);
             }
+            Gdx.graphics.setVSync(vsync);
         }
 
-        Gdx.graphics.setVSync(vsync);
-        Gdx.graphics.setForegroundFPS(fpsLimit);
+        // 2. FPS LIMIT (Berlaku di PC & Mobile)
+        Gdx.graphics.setForegroundFPS(fpsLimit.value);
 
-        // TODO: Aplikasikan Volume ke Audio Manager nanti
-        // TODO: Aplikasikan Preset (LOW/MID/HIGH) ke Shader Config & Shadow Resolution
+        // 3. AUDIO (TODO: Integrasi dengan AudioManager saat dibuat nanti)
+        // AudioManager.getInstance().setMasterVolume(masterVolume);
+
+        // 4. GRAPHICS PRESET (Akan dibaca oleh SceneRenderer untuk Shader Config di fase selanjutnya)
+        Gdx.app.log("SETTINGS", "Applied Preset: " + graphicsPreset.name() + " | FPS: " + fpsLimit.value);
     }
 }
