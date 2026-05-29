@@ -1,5 +1,6 @@
 package com.bismillahjuara.game.core;
 
+import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.input.GameInputHandler;
 import com.bismillahjuara.game.managers.EntityManager;
@@ -19,5 +20,8 @@ public class GameContext {
     public SceneRenderer sceneRenderer;
 
     public GameplayState state = GameplayState.INITIALIZING;
+
+    // --- AAA AUDIO ENGINE INJECTION ---
+    public AudioManager audio = AudioManager.getInstance();
     public final float fixedTimeStep = 1f / 60f;
 }

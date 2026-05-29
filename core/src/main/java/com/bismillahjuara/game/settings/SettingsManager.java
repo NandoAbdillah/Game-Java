@@ -25,8 +25,14 @@ public class SettingsManager {
     public boolean fullscreen;
     public boolean vsync;
     public FPSLimit fpsLimit;
-    public float masterVolume;
     public GraphicsQuality graphicsPreset;
+
+    // --- AAA AUDIO BUSES ---
+    public float masterVolume;
+    public float musicVolume;
+    public float ambientVolume;
+    public float sfxVolume;
+    public float uiVolume;
 
     private SettingsManager() {
         saveSystem = new SavePreferenceSystem();
@@ -41,7 +47,12 @@ public class SettingsManager {
     public void loadSettings() {
         fullscreen = saveSystem.getBoolean("fullscreen", true);
         vsync = saveSystem.getBoolean("vsync", true);
+
         masterVolume = saveSystem.getFloat("masterVolume", 1.0f);
+        musicVolume = saveSystem.getFloat("musicVolume", 1.0f);
+        ambientVolume = saveSystem.getFloat("ambientVolume", 1.0f);
+        sfxVolume = saveSystem.getFloat("sfxVolume", 1.0f);
+        uiVolume = saveSystem.getFloat("uiVolume", 1.0f);
 
         try {
             fpsLimit = FPSLimit.valueOf(saveSystem.getString("fpsLimit", "FPS_60"));
@@ -56,7 +67,13 @@ public class SettingsManager {
     public void saveAndApplySettings() {
         saveSystem.saveBoolean("fullscreen", fullscreen);
         saveSystem.saveBoolean("vsync", vsync);
+
         saveSystem.saveFloat("masterVolume", masterVolume);
+        saveSystem.saveFloat("musicVolume", musicVolume);
+        saveSystem.saveFloat("ambientVolume", ambientVolume);
+        saveSystem.saveFloat("sfxVolume", sfxVolume);
+        saveSystem.saveFloat("uiVolume", uiVolume);
+
         saveSystem.saveString("fpsLimit", fpsLimit.name());
         saveSystem.saveString("graphicsPreset", graphicsPreset.name());
         saveSystem.flush();
@@ -65,8 +82,7 @@ public class SettingsManager {
     }
 
     public void applyToEngine() {
-        // 1. RESOLUSI & FULLSCREEN (Hanya dieksekusi di PC)
-        if (!GameInputHandler.IS_MOBILE) {
+        if (!com.bismillahjuara.game.input.GameInputHandler.IS_MOBILE) {
             if (fullscreen) {
                 DisplayMode currentMode = Gdx.graphics.getDisplayMode();
                 Gdx.graphics.setFullscreenMode(currentMode);
@@ -79,10 +95,7 @@ public class SettingsManager {
         // 2. FPS LIMIT (Berlaku di PC & Mobile)
         Gdx.graphics.setForegroundFPS(fpsLimit.value);
 
-        // 3. AUDIO (TODO: Integrasi dengan AudioManager saat dibuat nanti)
-        // AudioManager.getInstance().setMasterVolume(masterVolume);
-
-        // 4. GRAPHICS PRESET (Akan dibaca oleh SceneRenderer untuk Shader Config di fase selanjutnya)
-        Gdx.app.log("SETTINGS", "Applied Preset: " + graphicsPreset.name() + " | FPS: " + fpsLimit.value);
+        // REAL-TIME AUDIO UPDATE
+        com.bismillahjuara.game.audio.AudioManager.getInstance().refreshRuntimeVolumes();
     }
 }

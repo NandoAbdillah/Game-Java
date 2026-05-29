@@ -9,10 +9,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
+import com.bismillahjuara.game.audio.AudioManager;
+import com.bismillahjuara.game.audio.AudioTrack;
 import com.bismillahjuara.game.transitions.FadeTransition;
 import com.bismillahjuara.game.ui.AnimatedImageButton;
 
 public class MainMenuScreen extends BaseScreen {
+
 
     private Table mainTable;
 
@@ -33,7 +36,9 @@ public class MainMenuScreen extends BaseScreen {
         loadedTextures = new Array<>();
         loadAssets();
         setupUI();
+        beginThemeSound();
         animateEntrance();
+
     }
 
     private void loadAssets() {
@@ -126,6 +131,10 @@ public class MainMenuScreen extends BaseScreen {
         mainTable.add(btn).size(300, 80).padBottom(20).left().row();
     }
 
+
+    private  void beginThemeSound()  {
+        AudioManager.getInstance().playMusic(AudioTrack.THEME, 1.5f);
+    }
     private void animateEntrance() {
         // Efek ui entrance
         float delay = 0f;
