@@ -1,5 +1,6 @@
 package com.bismillahjuara.game.hud;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -24,6 +25,14 @@ public class HudAssets {
     private Texture buttonBgTex;
     private Texture buttonDownTex;
 
+    // --- PAUSE MENU ASSETS ---
+    public Texture pauseTitleTex;
+    public Texture resumeTex;
+    public Texture settingsTex;
+    public Texture mainMenuTex;
+    public Texture closeGameTex;
+    public Texture pauseBtnMobileTex;
+
     public HudAssets() {
         skin = new Skin();
         defaultFont = new BitmapFont();
@@ -32,10 +41,31 @@ public class HudAssets {
 
         createTouchpadStyle();
         createButtonStyle();
+        loadPauseAssets();
+    }
+
+    private void loadPauseAssets() {
+        try {
+            // Matikan filter blur agar pixel-perfect
+            pauseTitleTex = loadTex("ui/pausemenu/PAUSE TITLE.png");
+            resumeTex = loadTex("ui/pausemenu/RESUME.png");
+            settingsTex = loadTex("ui/pausemenu/SETTINGS BUTTON.png");
+            mainMenuTex = loadTex("ui/pausemenu/MAIN MENU.png");
+            closeGameTex = loadTex("ui/pausemenu/CLOSE GAME.png");
+            pauseBtnMobileTex = loadTex("ui/pausemenu/Pause Button.png");
+        } catch (Exception e) {
+            Gdx.app.error("HUD_ASSETS", "Gagal load gambar Pause Menu! Cek path/nama file.", e);
+        }
+    }
+
+    private Texture loadTex(String path) {
+        Texture tex = new Texture(Gdx.files.internal(path));
+        tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        return tex;
     }
 
     private void createTouchpadStyle() {
-        // Background Joystick  (400x400)
+        // 1. Background Joystick 2X LEBIH BESAR (400x400)
         Pixmap bgPixmap = new Pixmap(400, 400, Pixmap.Format.RGBA8888);
         bgPixmap.setColor(1f, 1f, 1f, 0.15f);
         bgPixmap.fillCircle(200, 200, 200);
@@ -58,6 +88,7 @@ public class HudAssets {
     }
 
     private void createButtonStyle() {
+        // Tombol saat diam (Lingkaran Abu-abu Transparan)
         Pixmap btnPixmap = new Pixmap(150, 150, Pixmap.Format.RGBA8888);
         btnPixmap.setColor(0.2f, 0.2f, 0.2f, 0.6f);
         btnPixmap.fillCircle(75, 75, 75);
@@ -88,5 +119,13 @@ public class HudAssets {
         if (touchpadKnobTex != null) touchpadKnobTex.dispose();
         if (buttonBgTex != null) buttonBgTex.dispose();
         if (buttonDownTex != null) buttonDownTex.dispose();
+
+        // Buang tekstur pause
+        if (pauseTitleTex != null) pauseTitleTex.dispose();
+        if (resumeTex != null) resumeTex.dispose();
+        if (settingsTex != null) settingsTex.dispose();
+        if (mainMenuTex != null) mainMenuTex.dispose();
+        if (closeGameTex != null) closeGameTex.dispose();
+        if (pauseBtnMobileTex != null) pauseBtnMobileTex.dispose();
     }
 }
