@@ -22,7 +22,6 @@ public class MobileInputController extends BaseInputController {
     private boolean lastThrowState = false;
     private boolean lastCrouchState = false;
 
-    // FIX: Gunakan AdvancedCameraSystem
     public MobileInputController(AdvancedCameraSystem camera, HudManager hudManager) {
         super(camera);
         this.hudManager = hudManager;
@@ -52,7 +51,14 @@ public class MobileInputController extends BaseInputController {
             action.crouchToggled = currentCrouch && !lastCrouchState;
             lastCrouchState = currentCrouch;
 
-            action.sprintHeld = (Math.abs(action.moveX) > 0.8f || Math.abs(action.moveY) > 0.8f);
+            float currentJoyLen = Math.max(Math.abs(action.moveX), Math.abs(action.moveY));
+            if (currentJoyLen > 0.85f) {
+                action.sprintHeld = true;  // Lari kencang
+            } else if (currentJoyLen < 0.70f) {
+                action.sprintHeld = false; // Turun jadi jalan kaki
+            }
+
+
         } else {
             action.moveX = 0f;
             action.moveY = 0f;
@@ -93,7 +99,6 @@ public class MobileInputController extends BaseInputController {
             if (pointer == camTouchPointer) {
                 float newDist = Vector2.dst(camTouchLastX, (screenH - camTouchLastY), sx, (screenH - (float)sy));
 
-                // FIX: Gunakan fitur Zoom kamera modern!
                 float zoomDelta = (pinchLastDist - newDist) * 0.05f;
                 camera.addZoom(zoomDelta);
 

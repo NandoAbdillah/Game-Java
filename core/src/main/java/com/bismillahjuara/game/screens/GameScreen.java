@@ -34,7 +34,6 @@ public class GameScreen implements Screen {
         inputHandler = new GameInputHandler(camera, hudManager);
         gameplayManager.bindInput(inputHandler);
 
-        // --- WIRE CALLBACKS PAUSE MENU ---
         hudManager.getPauseMenuUI().onResumeCallback = new Runnable() {
             @Override public void run() { resumeGame(); }
         };
@@ -53,8 +52,6 @@ public class GameScreen implements Screen {
     private void pauseGame() {
         gameplayManager.pauseGame();
         hudManager.showPauseMenu();
-        // Lepas input gameplay agar player tidak bisa kontrol karakter di belakang layar,
-        // pastikan Input UI tetap nyala. InputMultiplexer di method show() mengurus ini karena Stage ada di urutan pertama.
     }
 
     private void resumeGame() {
@@ -65,7 +62,6 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         InputMultiplexer multiplexer = new InputMultiplexer();
-        // Urutan PENTING: Stage (UI) pertama, lalu Input Gameplay
         if (hudManager != null) multiplexer.addProcessor(hudManager.getStage());
         if (inputHandler != null) multiplexer.addProcessor(inputHandler);
         Gdx.input.setInputProcessor(multiplexer);
@@ -77,27 +73,30 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         if (gameplayManager == null) return;
 
-        // 1. CEK INTENT PAUSE (Dari Keyboard ESC atau Mobile Button)
+        // =========================================================
+        // FIX BUG: UPDATE INPUT HARUS DI ATAS!
+        // Agar status ESC yang ditekan segera dikonsumsi dan tidak ketinggalan 1 frame.
+        // =========================================================
+        inputHandler.update(delta);
+
+        // CEK INTENT PAUSE (Dari Keyboard ESC atau Mobile Button)
         boolean isMobilePauseClicked = (hudManager.getMobileControls() != null && hudManager.getMobileControls().isPauseClicked());
 
         if (inputHandler.getAction().pausePressed || isMobilePauseClicked) {
-            inputHandler.getAction().pausePressed = false; // Consume event
+            inputHandler.getAction().pausePressed = false; // Langsung Hapus/Konsumsi Event
 
             if (gameplayManager.getContext().state == GameplayState.PLAYING) {
                 pauseGame();
             } else if (gameplayManager.getContext().state == GameplayState.PAUSED) {
-                resumeGame(); // Toggle mati jika ditekan lagi
+                resumeGame();
             }
         }
 
-        // 2. UPDATE LOGIC (UpdatePipeline otomatis mengabaikan update entity jika state = PAUSED)
-        inputHandler.update(delta);
+        // UPDATE LOGIC
         gameplayManager.update(delta);
 
-        // 3. RENDER 3D (RenderPipeline otomatis membekukan animasi jika state = PAUSED)
+        // RENDER 3D & UI
         gameplayManager.render(delta);
-
-        // 4. RENDER UI (UI Selalu berjalan normal agar tombol animasi jalan)
         hudManager.updateAndRender(com.badlogic.gdx.math.Vector3.Zero, camera.getYaw());
     }
 

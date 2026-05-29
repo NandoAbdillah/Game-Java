@@ -6,15 +6,23 @@ import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
 import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
+import com.bismillahjuara.game.world.SkyEnvironmentSystem;
+
 import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 /**
- * Manager Grafis 3D Tertinggi.Menampung semua model (Scene) dan merendernya dengan Shader yang seragam.
+ * Manager Grafis 3D Tertinggi.
+ * Menampung semua model (Scene), Langit (Sky), dan Cahaya.
  */
 public class SceneRenderer {
+
     private SceneManager sceneManager;
+    private DirectionalLightEx mainSunLight;
+
+    // AAA Living Sky
+    private SkyEnvironmentSystem skySystem;
 
     public SceneRenderer() {
         DefaultShader.Config config = new DefaultShader.Config();
@@ -25,15 +33,18 @@ public class SceneRenderer {
         sceneManager = new SceneManager(new DefaultShaderProvider(config), new DepthShaderProvider(depthConfig));
 
         setupLighting();
+
+        // Inisialisasi Langit Dinamis dan berikan kendali cahaya (SunLight) kepadanya
+        skySystem = new SkyEnvironmentSystem(sceneManager, mainSunLight);
     }
 
     private void setupLighting() {
-        sceneManager.setAmbientLight(0.5f);
-        DirectionalLightEx sunLight = new DirectionalLightEx();
-        sunLight.direction.set(-1f, -1f, -0.4f).nor();
-        sunLight.color.set(Color.WHITE);
-        sunLight.intensity = 1.2f;
-        sceneManager.environment.add(sunLight);
+        sceneManager.setAmbientLight(0.5f); // Akan di-override oleh SkySystem
+        mainSunLight = new DirectionalLightEx();
+        mainSunLight.direction.set(-1f, -1f, -0.4f).nor();
+        mainSunLight.color.set(Color.WHITE);
+        mainSunLight.intensity = 1.2f;
+        sceneManager.environment.add(mainSunLight);
     }
 
     public void addScene(Scene scene) {
@@ -45,12 +56,20 @@ public class SceneRenderer {
     }
 
     public void render(PerspectiveCamera camera, float delta) {
+        // 1. Update logika Cuaca, Awan, dan Petir
+        skySystem.update(delta, camera.position);
+
+        // 2. Render Bola Langit/Awan TERLEBIH DAHULU di layer paling belakang (Zero Overdraw)
+        skySystem.render(camera);
+
+        // 3. Render Dunia 3D GLTF (Pohon, Tanah, Karakter) di atasnya
         sceneManager.setCamera(camera);
-        sceneManager.update(delta); // Update animasi GLTF
+        sceneManager.update(delta);
         sceneManager.render();
     }
 
     public void dispose() {
         sceneManager.dispose();
+        if (skySystem != null) skySystem.dispose();
     }
 }

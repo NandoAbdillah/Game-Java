@@ -79,7 +79,6 @@ public class Player extends Entity {
 
         applyTransform();
 
-        // FIX ANIMASI KESURUPAN: Pakai AnimationController bawaan Scene!
         animationController = playerScene.animationController;
         if (animationController != null) {
             changeState(State.IDLE, true);
@@ -145,7 +144,11 @@ public class Player extends Entity {
             }
         }
 
-        boolean hasInput = (input.moveX != 0 || input.moveY != 0);
+        // =========================================================
+        // FIX BUG: PASANG DEADZONE AGAR ANIMASI IDLE/WALK TIDAK FLICKER
+        // Joystick harus digeser lebih dari 0.1 agar dianggap bergerak
+        // =========================================================
+        boolean hasInput = (Math.abs(input.moveX) > 0.1f || Math.abs(input.moveY) > 0.1f);
         Vector2 targetVelocity2D = new Vector2();
 
         if (currentState.priority == 0 || !isGrounded) {
@@ -192,13 +195,9 @@ public class Player extends Entity {
 
         currentVelocity2D.lerp(targetVelocity2D, accelRate * delta);
 
-        // =========================================================
-        // KINEMATIKA & COLLISION (Dihitung di bagian PALING BAWAH)
-        // =========================================================
         float stepX = currentVelocity2D.x * delta;
         float stepZ = currentVelocity2D.y * delta;
 
-        // Karena karakter di-scale 4.0x, kolisinya harus diperlebar agar sepadan dengan visualnya
         float playerRadius = 1.0f;
         float playerHeight = 4.0f;
 

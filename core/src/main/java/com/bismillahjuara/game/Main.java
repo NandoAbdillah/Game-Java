@@ -30,14 +30,17 @@ public class Main extends Game {
     public void render() {
 
         // Meneruskan perintah render loop ke konduktor layar
-        ScreenManager.getInstance().render(Gdx.graphics.getDeltaTime());
+//        ScreenManager.getInstance().render(Gdx.graphics.getDeltaTime());
 
         float delta = Gdx.graphics.getDeltaTime();
         // 1. Update Global Audio Engine (Biar lagu tidak putus)
         AudioManager.getInstance().update(delta);
 
         // 2. Meneruskan perintah render loop ke konduktor layar
-        ScreenManager.getInstance().render(delta);
+//        ScreenManager.getInstance().render(delta);
+
+        ScreenManager.getInstance().render(Gdx.graphics.getDeltaTime());
+
     }
 
     @Override

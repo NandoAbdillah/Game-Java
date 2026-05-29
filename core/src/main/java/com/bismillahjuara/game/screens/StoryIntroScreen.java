@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
+import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.transitions.FadeTransition;
 
 /**
@@ -26,6 +27,8 @@ public class StoryIntroScreen extends BaseScreen {
         super();
         setupCinematic();
         setupSkipButton();
+
+        AudioManager.getInstance().stopMusic(1.5f);
     }
 
     private void setupCinematic() {
