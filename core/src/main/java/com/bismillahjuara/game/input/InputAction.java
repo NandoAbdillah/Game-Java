@@ -25,6 +25,8 @@ public class InputAction {
     public boolean diePressed = false; // Untuk testing
 
     public boolean toggleCameraPressed = false;
+    // --- SYSTEM ACTIONS ---
+    public boolean pausePressed = false; // AAA Pause Button
 
     /**
      * Memastikan semua aksi trigger di-reset setiap frame agar tidak spam. (LibGDX's isKeyJustPressed sudah otomatis, tapi method ini berguna untuk Mobile/Gamepad nanti)
@@ -38,5 +40,6 @@ public class InputAction {
         emotePressed = false;
         crouchToggled = false;
         diePressed = false;
+        pausePressed = false;
     }
 }
