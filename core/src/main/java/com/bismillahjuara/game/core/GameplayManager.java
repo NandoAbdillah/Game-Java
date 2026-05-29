@@ -17,7 +17,7 @@ public class GameplayManager {
 
     public GameplayManager() {
         context = new GameContext();
-        context.sceneRenderer = new SceneRenderer();
+        context.sceneRenderer = new SceneRenderer(); // Instansiasi lebih dulu
 
         context.worldManager = new WorldManager(context);
         context.entityManager = new EntityManager(context);
@@ -46,6 +46,26 @@ public class GameplayManager {
     public void startGameplay() {
         context.state = GameplayState.PLAYING;
     }
+
+    // ==========================================================
+    // --- PAUSE API (JEMBATAN UNTUK GAME SCREEN) ---
+    // ==========================================================
+    public void pauseGame() {
+        if (context.state == GameplayState.PLAYING) {
+            context.state = GameplayState.PAUSED;
+        }
+    }
+
+    public void resumeGame() {
+        if (context.state == GameplayState.PAUSED) {
+            context.state = GameplayState.PLAYING;
+        }
+    }
+
+    public GameContext getContext() {
+        return context;
+    }
+    // ==========================================================
 
     public void update(float delta) {
         updatePipeline.update(delta);
