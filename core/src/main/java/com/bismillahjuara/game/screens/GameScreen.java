@@ -5,13 +5,11 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.core.GameplayManager;
+import com.bismillahjuara.game.core.GameplayState;
 import com.bismillahjuara.game.hud.HudManager;
 import com.bismillahjuara.game.input.GameInputHandler;
+import com.bismillahjuara.game.transitions.FadeTransition;
 
-/**
- * Screen Gameplay Modern (AAA Architecture).
- * Tidak ada logika fisika, tidak ada GL Clear, hanya orkestrasi Lifecycle.
- */
 public class GameScreen implements Screen {
 
     private GameplayManager gameplayManager;
@@ -19,11 +17,7 @@ public class GameScreen implements Screen {
     private GameInputHandler inputHandler;
     private AdvancedCameraSystem camera;
 
-    public GameScreen() {
-        // Diciptakan dalam keadaan kosong oleh AsyncGameplayLoader
-    }
-
-    // --- DEFERRED INITIALIZATION PIPELINE ---
+    public GameScreen() {}
 
     public void initWorld() {
         gameplayManager = new GameplayManager();
@@ -39,18 +33,43 @@ public class GameScreen implements Screen {
         hudManager = new HudManager();
         inputHandler = new GameInputHandler(camera, hudManager);
         gameplayManager.bindInput(inputHandler);
+
+        // --- WIRE CALLBACKS PAUSE MENU ---
+        hudManager.getPauseMenuUI().onResumeCallback = new Runnable() {
+            @Override public void run() { resumeGame(); }
+        };
+
+        hudManager.getPauseMenuUI().onMainMenuCallback = new Runnable() {
+            @Override public void run() {
+                ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(1f));
+            }
+        };
+
+        hudManager.getPauseMenuUI().onExitGameCallback = new Runnable() {
+            @Override public void run() { Gdx.app.exit(); }
+        };
     }
 
-    // ---------------------------------------
+    private void pauseGame() {
+        gameplayManager.pauseGame();
+        hudManager.showPauseMenu();
+        // Lepas input gameplay agar player tidak bisa kontrol karakter di belakang layar,
+        // pastikan Input UI tetap nyala. InputMultiplexer di method show() mengurus ini karena Stage ada di urutan pertama.
+    }
+
+    private void resumeGame() {
+        gameplayManager.resumeGame();
+        hudManager.hidePauseMenu();
+    }
 
     @Override
     public void show() {
         InputMultiplexer multiplexer = new InputMultiplexer();
+        // Urutan PENTING: Stage (UI) pertama, lalu Input Gameplay
         if (hudManager != null) multiplexer.addProcessor(hudManager.getStage());
         if (inputHandler != null) multiplexer.addProcessor(inputHandler);
         Gdx.input.setInputProcessor(multiplexer);
 
-        // Tandai bahwa loading selesai dan game dimulai
         gameplayManager.startGameplay();
     }
 
@@ -58,15 +77,27 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         if (gameplayManager == null) return;
 
-        // 1. UPDATE (Update input, physics, HUD, AI)
+        // 1. CEK INTENT PAUSE (Dari Keyboard ESC atau Mobile Button)
+        boolean isMobilePauseClicked = (hudManager.getMobileControls() != null && hudManager.getMobileControls().isPauseClicked());
+
+        if (inputHandler.getAction().pausePressed || isMobilePauseClicked) {
+            inputHandler.getAction().pausePressed = false; // Consume event
+
+            if (gameplayManager.getContext().state == GameplayState.PLAYING) {
+                pauseGame();
+            } else if (gameplayManager.getContext().state == GameplayState.PAUSED) {
+                resumeGame(); // Toggle mati jika ditekan lagi
+            }
+        }
+
+        // 2. UPDATE LOGIC (UpdatePipeline otomatis mengabaikan update entity jika state = PAUSED)
         inputHandler.update(delta);
         gameplayManager.update(delta);
 
-        // 2. RENDER (Gambar 3D dan 2D UI)
+        // 3. RENDER 3D (RenderPipeline otomatis membekukan animasi jika state = PAUSED)
         gameplayManager.render(delta);
 
-        // FIX Anti-Crash: Gunakan Vector3.Zero bawaan LibGDX agar tidak ada alokasi memori (Garbage Collection) baru.
-        // Nanti di fase UI lanjutan, HUD akan membaca posisi player langsung dari GameContext.
+        // 4. RENDER UI (UI Selalu berjalan normal agar tombol animasi jalan)
         hudManager.updateAndRender(com.badlogic.gdx.math.Vector3.Zero, camera.getYaw());
     }
 
