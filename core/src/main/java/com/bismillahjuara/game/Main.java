@@ -2,6 +2,7 @@ package com.bismillahjuara.game;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.screens.ScreenManager;
 import com.bismillahjuara.game.screens.SplashScreen;
 import com.bismillahjuara.game.screens.StoryIntroScreen;
@@ -27,8 +28,16 @@ public class Main extends Game {
 
     @Override
     public void render() {
+
         // Meneruskan perintah render loop ke konduktor layar
         ScreenManager.getInstance().render(Gdx.graphics.getDeltaTime());
+
+        float delta = Gdx.graphics.getDeltaTime();
+        // 1. Update Global Audio Engine (Biar lagu tidak putus)
+        AudioManager.getInstance().update(delta);
+
+        // 2. Meneruskan perintah render loop ke konduktor layar
+        ScreenManager.getInstance().render(delta);
     }
 
     @Override
