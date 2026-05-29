@@ -1,6 +1,5 @@
 package com.bismillahjuara.game.audio;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.math.MathUtils;
@@ -67,7 +66,7 @@ public class AudioManager {
         }
     }
 
-    public void stopMusic() {
+    public void stopMusic(float v) {
         if (currentMusic != null) currentMusic.stop();
         currentMusicTrack = null;
         isMusicFading = false;
