@@ -100,7 +100,7 @@ public class WorldManager {
         try {
             if (isDebugMode) debugRenderer = new ShapeRenderer();
 
-            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps2.glb"));
+            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps.glb"));
             mapScene = new Scene(mapAsset.scene);
 
             mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
