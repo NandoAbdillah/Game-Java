@@ -3,6 +3,12 @@ package com.bismillahjuara.game.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.bismillahjuara.game.audio.AudioManager;
+import com.bismillahjuara.game.audio.AudioSFX;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.core.GameplayManager;
 import com.bismillahjuara.game.core.GameplayState;
@@ -17,6 +23,11 @@ public class GameScreen implements Screen {
     private GameInputHandler inputHandler;
     private AdvancedCameraSystem camera;
 
+    private boolean isJumpscareTriggered = false;
+    private float jumpscareTimer = 0f;
+    private Image jumpscareOverlay;
+    private Texture bloodyTexture;
+
     public GameScreen() {}
 
     public void initWorld() {
@@ -29,10 +40,13 @@ public class GameScreen implements Screen {
         gameplayManager.buildEntities(camera);
     }
 
+
+
     public void initUI() {
         hudManager = new HudManager();
         inputHandler = new GameInputHandler(camera, hudManager);
         gameplayManager.bindInput(inputHandler);
+        setupJumpscareUI();
 
         hudManager.getPauseMenuUI().onResumeCallback = new Runnable() {
             @Override public void run() { resumeGame(); }
@@ -47,6 +61,21 @@ public class GameScreen implements Screen {
         hudManager.getPauseMenuUI().onExitGameCallback = new Runnable() {
             @Override public void run() { Gdx.app.exit(); }
         };
+    }
+
+    private void setupJumpscareUI() {
+        // Buat filter merah darah murni menggunakan kode
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.8f, 0f, 0f, 0.6f));
+        pixmap.fill();
+        bloodyTexture = new Texture(pixmap);
+        pixmap.dispose();
+
+        jumpscareOverlay = new Image(bloodyTexture);
+        jumpscareOverlay.setFillParent(true);
+        jumpscareOverlay.setVisible(false);
+
+        hudManager.getStage().addActor(jumpscareOverlay); // Taruh di layer paling atas
     }
 
     private void pauseGame() {
@@ -73,6 +102,11 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         if (gameplayManager == null) return;
 
+        if (gameplayManager.getContext().state == GameplayState.GAME_OVER) {
+            handleJumpscareSequence(delta);
+            return; // Hentikan semua input dan logika gameplay
+        }
+
         // =========================================================
         // FIX BUG: UPDATE INPUT HARUS DI ATAS!
         // Agar status ESC yang ditekan segera dikonsumsi dan tidak ketinggalan 1 frame.
@@ -98,6 +132,30 @@ public class GameScreen implements Screen {
         // RENDER 3D & UI
         gameplayManager.render(delta);
         hudManager.updateAndRender(com.badlogic.gdx.math.Vector3.Zero, camera.getYaw());
+    }
+
+    private void handleJumpscareSequence(float delta) {
+        if (!isJumpscareTriggered) {
+            isJumpscareTriggered = true;
+            AudioManager.getInstance().stopMusic(0f); // Cut instan!
+            AudioManager.getInstance().playSFX(AudioSFX.JUMPSCARE);
+            jumpscareOverlay.setVisible(true);
+        }
+
+        jumpscareTimer += delta;
+
+        // Efek Flickering (Kibas-kedip mengerikan)
+        jumpscareOverlay.getColor().a = com.badlogic.gdx.math.MathUtils.random(0.3f, 1.0f);
+
+        // Setelah 2 detik diteriakin, buang ke layar Game Over
+        if (jumpscareTimer > 2.0f) {
+            ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(2.0f));
+            // TODO: Nanti ubah MainMenuScreen menjadi GameOverScreen jika classnya sudah kamu buat
+        }
+
+        // Tetap render 3D di belakang agar terasa nyata, tapi beku (delta = 0)
+        gameplayManager.render(0f);
+        hudManager.getStage().draw();
     }
 
     @Override
