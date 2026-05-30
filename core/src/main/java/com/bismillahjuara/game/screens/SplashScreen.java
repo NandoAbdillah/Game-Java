@@ -33,7 +33,7 @@ public class SplashScreen extends BaseScreen {
         font.getData().setScale(5f); // Kasih skala besar agar terlihat AAA
 
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
-        studioLogoPlaceholder = new Label("BismillahJuara\nStudio", style);
+        studioLogoPlaceholder = new Label("Nopal\nStudio", style);
         studioLogoPlaceholder.setAlignment(Align.center);
 
         // Set alpha awal ke 0 (menghilang)
