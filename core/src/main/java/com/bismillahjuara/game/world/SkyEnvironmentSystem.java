@@ -127,14 +127,18 @@ public class SkyEnvironmentSystem {
     }
 
     public void update(float delta, Vector3 cameraPosition) {
-        // 1. Kunci posisi bola ke kamera (Ilusi langit tanpa batas, player tidak akan pernah menabrak ujung langit)
-        skyInstance.transform.setToTranslation(cameraPosition);
+        // FIX AAA HORIZON BLENDING:
+        // Turunkan titik pusat bola sejauh 15 meter ke bawah tanah.
+        // Ini akan memotong kutub bawah bola sehingga panorama terlihat datar (flat horizon)
+        // dan menutupi tepian map yang terpotong secara natural!
+        float skyYOffset = cameraPosition.y - 15f;
 
-        // 2. Putar awan dan kabut perlahan secara real-time
-        cloudInstance.transform.setToTranslation(cameraPosition).rotate(Vector3.Y, Gdx.graphics.getFrameId() * 0.02f);
-        fogInstance.transform.setToTranslation(cameraPosition).rotate(Vector3.Y, Gdx.graphics.getFrameId() * 0.05f);
+        skyInstance.transform.setToTranslation(cameraPosition.x, skyYOffset, cameraPosition.z);
+        cloudInstance.transform.setToTranslation(cameraPosition.x, skyYOffset, cameraPosition.z)
+            .rotate(Vector3.Y, Gdx.graphics.getFrameId() * 0.02f);
+        fogInstance.transform.setToTranslation(cameraPosition.x, skyYOffset, cameraPosition.z)
+            .rotate(Vector3.Y, Gdx.graphics.getFrameId() * 0.05f);
 
-        // 3. UPDATE LIGHTNING STATE MACHINE
         handleLightningAndThunder(delta);
     }
 
