@@ -1,5 +1,6 @@
 package com.bismillahjuara.game.audio;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.math.MathUtils;
@@ -26,6 +27,17 @@ public class AudioManager {
     // --- STATE AMBIENT ---
     private AudioTrack currentAmbientTrack;
     private Music currentAmbient;
+
+    // --- STATE FOOTSTEP (SMART COOLDOWN & VOLUME) ---
+    private Sound lastFootstepSound;
+    private long lastFootstepId = -1;
+
+    // Timer untuk mengunci pemutaran audio
+    private float footstepCooldownTimer = 0f;
+    // Sesuaikan angka ini persis dengan durasi aslimu (6 detik)
+    private final float FOOTSTEP_AUDIO_DURATION = 6.0f;
+    // Volume khusus langkah kaki (0.15f - 0.25f) agar tidak merusak telinga
+    public float footstepVolumeMultiplier = 0.20f;
 
     private AudioManager() {
         settings = SettingsManager.getInstance();
@@ -66,10 +78,20 @@ public class AudioManager {
         }
     }
 
-    public void stopMusic(float v) {
-        if (currentMusic != null) currentMusic.stop();
+    public void stopMusic(float fadeOutDuration) {
+        if (currentMusic == null) return;
         currentMusicTrack = null;
-        isMusicFading = false;
+
+        if (fadeOutDuration > 0) {
+            isMusicFading = true;
+            nextMusic = null;
+            musicFadeDuration = fadeOutDuration;
+            musicFadeTimer = 0f;
+        } else {
+            currentMusic.stop();
+            currentMusic = null;
+            isMusicFading = false;
+        }
     }
 
     public void playAmbient(AudioTrack track) {
@@ -105,22 +127,84 @@ public class AudioManager {
     }
 
     // ==========================================
-    // 3. ENGINE UPDATE & ROUTING
+    // 3. SMART FOOTSTEP SYSTEM (6-SECOND LOCK)
+    // ==========================================
+    public void playRandomFootstep(boolean isGrass) {
+
+        // 1. CEK COOLDOWN: Jika timer masih ada (audio masih muter), ABAIKAN TRIGGER!
+        if (footstepCooldownTimer > 0) {
+            // Opsional: Batasi log agar tidak spam setiap frame
+            if (MathUtils.random() < 0.02f) {
+                Gdx.app.log("AUDIO_FOOTSTEP", "FOOTSTEP BLOCKED (Audio 6 detik sedang Active/Cooldown)");
+            }
+            return;
+        }
+
+        // 2. RESET AUDIO LAMA (Failsafe)
+        if (lastFootstepSound != null && lastFootstepId != -1) {
+            lastFootstepSound.stop(lastFootstepId);
+        }
+
+        // 3. PUTAR AUDIO BARU (Kita paksakan ke STEP_GRASS_1 sesuai asetmu saat ini)
+        AudioSFX chosen = AudioSFX.STEP_GRASS_1;
+
+        Sound sound = getSoundSafe(chosen.path);
+        if (sound != null) {
+            lastFootstepSound = sound;
+
+            // Terapkan Volume khusus (Kecilkan agar tidak pecah)
+            float finalVolume = getSFXVolume() * footstepVolumeMultiplier;
+
+            // Mainkan tanpa random pitch agar tempo 6 detiknya konstan
+            lastFootstepId = sound.play(finalVolume, 1f, 0);
+
+            // 4. AKTIFKAN COOLDOWN
+            footstepCooldownTimer = FOOTSTEP_AUDIO_DURATION;
+
+            Gdx.app.log("AUDIO_FOOTSTEP", "FOOTSTEP PLAY (Terkunci selama " + FOOTSTEP_AUDIO_DURATION + " detik. Volume: " + finalVolume + ")");
+        }
+    }
+
+    /**
+     * Mematikan paksa footstep (Opsional).
+     * Bisa dipanggil dari Player.java jika karakter benar-benar diam/berhenti.
+     */
+    public void stopFootstep() {
+        if (footstepCooldownTimer > 0 && lastFootstepSound != null && lastFootstepId != -1) {
+            lastFootstepSound.stop(lastFootstepId);
+            footstepCooldownTimer = 0f; // Reset kunci
+            Gdx.app.log("AUDIO_FOOTSTEP", "FOOTSTEP STOPPED (Karakter Diam)");
+        }
+    }
+
+    // ==========================================
+    // 4. ENGINE UPDATE & ROUTING
     // ==========================================
 
     public void update(float delta) {
-        // Crossfade Logic
-        if (isMusicFading && currentMusic != null && nextMusic != null) {
+        // --- UPDATE FOOTSTEP COOLDOWN ---
+        if (footstepCooldownTimer > 0) {
+            footstepCooldownTimer -= delta;
+        }
+
+        // --- UPDATE CROSSFADE MUSIC ---
+        // FIX: Hapus syarat nextMusic != null agar lagu bisa fade-out menuju keheningan (null)
+        if (isMusicFading && currentMusic != null) {
             musicFadeTimer += delta;
             float progress = MathUtils.clamp(musicFadeTimer / musicFadeDuration, 0f, 1f);
             float targetVol = getMusicVolume();
 
+            // Lagu sekarang perlahan menghilang
             currentMusic.setVolume(MathUtils.lerp(targetVol, 0f, progress));
-            nextMusic.setVolume(MathUtils.lerp(0f, targetVol, progress));
+
+            // Lagu selanjutnya perlahan muncul (jika ada)
+            if (nextMusic != null) {
+                nextMusic.setVolume(MathUtils.lerp(0f, targetVol, progress));
+            }
 
             if (progress >= 1f) {
                 currentMusic.stop();
-                currentMusic = nextMusic;
+                currentMusic = nextMusic; // Jika stopMusic, currentMusic akan menjadi null di sini (Benar)
                 nextMusic = null;
                 isMusicFading = false;
             }
@@ -138,7 +222,7 @@ public class AudioManager {
     private float getUIVolume()      { return settings.masterVolume * settings.uiVolume; }
 
     // ==========================================
-    // 4. ASSET FAILSAFES
+    // 5. ASSET FAILSAFES
     // ==========================================
 
     private Music getMusicSafe(String path) {
