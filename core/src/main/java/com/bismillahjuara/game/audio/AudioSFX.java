@@ -8,9 +8,9 @@ public enum AudioSFX {
     UI_BACK("sound/ui/back.wav"),
 
     // --- PLAYER FOOTSTEPS ---
-    STEP_GRASS_1("sound/player/footstep_grass_01.wav"),
-    STEP_GRASS_2("sound/player/footstep_grass_02.wav"),
-    STEP_GRASS_3("sound/player/footstep_grass_03.wav"),
+    STEP_GRASS_1("sound/player/footstep_grass_01.ogg"),
+    STEP_GRASS_2("sound/player/footstep_grass_02.ogg"),
+//    STEP_GRASS_3("sound/player/footstep_grass_03.wav"),
     STEP_STONE_1("sound/player/footstep_stone_01.wav"),
     STEP_STONE_2("sound/player/footstep_stone_02.wav"),
 
@@ -32,9 +32,10 @@ public enum AudioSFX {
     ENV_DOOR("sound/environment/door.wav"),
 
     // --- WEATHER (THUNDER) ---
-    ENV_THUNDER_1("sound/environment/thunder_01.ogg"),
-    ENV_THUNDER_2("sound/environment/thunder_02.ogg"),
-    ENV_THUNDER_3("sound/environment/thunder_03.ogg");
+    ENV_THUNDER_1("sound/environment/thunder.ogg"),
+    ENV_THUNDER_2("sound/environment/thunder.ogg");
+//    ENV_THUNDER_2("sound/environment/thunder_02.ogg"),
+//    ENV_THUNDER_3("sound/environment/thunder_03.ogg");
 
     public final String path;
     AudioSFX(String path) { this.path = path; }
