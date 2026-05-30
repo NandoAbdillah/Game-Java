@@ -61,10 +61,42 @@ public class Player extends Entity {
     private AnimationController animationController;
     private float skalaKarakter = 4.0f;
 
+
+    // --- FIX TENGGELAM (VISUAL OFFSET) ---
+    // Sesuaikan angka ini (misal 2.0f atau 3.5f) sampai telapak kaki pas di tanah.
+    // Ini HANYA mengangkat wujudnya, fisika kakinya tetap kokoh di Y=0!
+    private float visualYOffset = 3.0f;
+
+    // --- HORROR SURVIVAL STATE ---
+    public float dangerTimer = 0f;
+    private final float MAX_DANGER_TIME = 10f;
+
+    // --- VISUAL GLOW SYSTEM (ANDROID FRIENDLY) ---
+    private Color baseGlow = new Color(0.05f, 0.05f, 0.08f, 1f); // Glow tipis visibilitas
+    private Color healGlow = new Color(0.1f, 0.9f, 0.3f, 1f);    // Glow terang saat nge-heal
+    private Color currentGlow = new Color(baseGlow);
+    private float healGlowTimer = 0f;
+
     public Player(GameContext context) {
         super(new Vector3(0, PLAYER_HEIGHT, 0), context);
         setupGLTF();
     }
+
+
+        public void addDanger(float amount) {
+            dangerTimer += amount;
+            if (dangerTimer >= MAX_DANGER_TIME) {
+                triggerDeath();
+            }
+        }
+
+        private void triggerDeath() {
+            if (currentState != State.DYING) {
+                changeState(State.DYING, true);
+                // Memberitahu sistem bahwa game over
+                context.state = com.bismillahjuara.game.core.GameplayState.GAME_OVER;
+            }
+        }
 
     private void setupGLTF() {
         sceneAsset = new GLBLoader().load(Gdx.files.internal("models/chars/TimunAnim2.glb"));
@@ -92,7 +124,29 @@ public class Player extends Entity {
     }
 
     @Override
-    public void update(float delta) {}
+    public void update(float delta) {
+        // Logika Horror: Danger level menurun perlahan jika berhasil kabur
+        if (dangerTimer > 0) {
+            dangerTimer -= delta * 0.5f;
+        }
+
+        // --- UPDATE GLOW EFFECT (Interpolasi Mulus) ---
+        if (healGlowTimer > 0) {
+            healGlowTimer -= delta;
+            float progress = MathUtils.clamp(healGlowTimer / 2.0f, 0f, 1f); // 2 Detik efek heal
+            currentGlow.set(baseGlow).lerp(healGlow, progress);
+        } else {
+            currentGlow.set(baseGlow);
+        }
+
+        // Terapkan warna glow ke material GLTF
+        if (playerScene != null) {
+            for (Material material : playerScene.modelInstance.materials) {
+                ColorAttribute emissive = (ColorAttribute) material.get(ColorAttribute.Emissive);
+                if (emissive != null) emissive.color.set(currentGlow);
+            }
+        }
+    }
 
     public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
 
@@ -143,6 +197,13 @@ public class Player extends Entity {
                 actionFinished();
             }
         }
+
+        if (input.throwPressed) {
+            throwBiji();
+            requestState(State.THROW);
+        }
+
+
 
         // =========================================================
         // FIX BUG: PASANG DEADZONE AGAR ANIMASI IDLE/WALK TIDAK FLICKER
@@ -212,6 +273,30 @@ public class Player extends Entity {
         }
 
         applyTransform();
+    }
+
+    private void throwBiji() {
+        // AAA PROJECTILE FIX: Spawn Biji Timun di DEPAN player, bukan di dalam perut!
+        float yawRad = MathUtils.degreesToRadians * yaw;
+        // Wajib minus (-) untuk arah maju di LibGDX
+        float forwardX = -MathUtils.sin(yawRad);
+        float forwardZ = -MathUtils.cos(yawRad);
+
+        // Titik awal spawn (Maju 1.5 meter, Naik 2.5 meter ke tangan)
+        float spawnX = position.x + (forwardX * 1.5f);
+        float spawnY = position.y + 2.5f;
+        float spawnZ = position.z + (forwardZ * 1.5f);
+
+        for (int i = 0; i < 6; i++) {
+            float spreadYaw = yaw + MathUtils.random(-15f, 15f);
+
+            BijiTimunProjectile biji = new BijiTimunProjectile(
+                new Vector3(spawnX, spawnY, spawnZ),
+                spreadYaw,
+                context
+            );
+            context.entityManager.addEntity(biji);
+        }
     }
 
     private void requestState(State requestedState) {
