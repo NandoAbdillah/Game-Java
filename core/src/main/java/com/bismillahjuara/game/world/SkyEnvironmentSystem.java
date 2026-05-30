@@ -186,7 +186,7 @@ public class SkyEnvironmentSystem {
     }
 
     private void playRandomThunderSound() {
-        AudioSFX[] thunders = { AudioSFX.ENV_THUNDER_1, AudioSFX.ENV_THUNDER_2, AudioSFX.ENV_THUNDER_3 };
+        AudioSFX[] thunders = { AudioSFX.ENV_THUNDER_1, AudioSFX.ENV_THUNDER_2 };
         AudioSFX selected = thunders[MathUtils.random(0, thunders.length - 1)];
         AudioManager.getInstance().playSFX(selected);
     }
