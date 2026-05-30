@@ -1,7 +1,12 @@
 package com.bismillahjuara.game.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -9,6 +14,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.video.VideoPlayer;
+import com.badlogic.gdx.video.VideoPlayerCreator;
 import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.audio.AudioTrack;
 import com.bismillahjuara.game.transitions.FadeTransition;
@@ -16,54 +23,133 @@ import com.bismillahjuara.game.ui.AnimatedImageButton;
 
 public class MainMenuScreen extends BaseScreen {
 
+    private static final String VIDEO_PATH = "video/menu.webm";
+    private static final float VIDEO_MUTE_VOLUME = 0f;
+    private static final float OVERLAY_ALPHA = 0.4f;
 
     private Table mainTable;
 
-    // PENYIMPANAN TEKSTUR
     private Texture titleTex;
     private Texture btnNewGameTex;
     private Texture btnContinueTex;
-    private Texture btnStoryTex;     // KEMBALI HADIR!
+    private Texture btnStoryTex;
     private Texture btnSettingsTex;
-    private Texture btnCreditsTex;   // KEMBALI HADIR!
+    private Texture btnCreditsTex;
     private Texture btnExitTex;
 
-    // List penampung agar gampang dibersihkan
-    private Array<Texture> loadedTextures;
+    private VideoPlayer videoPlayer;
+    private Texture darkOverlayTex;
+    private Texture bgFallbackTex;
+
+    private boolean videoInitialized = false;
+    private boolean videoAvailable = false;
+
+    private final Array<Texture> loadedTextures = new Array<>();
 
     public MainMenuScreen() {
         super();
-        loadedTextures = new Array<>();
         loadAssets();
         setupUI();
         beginThemeSound();
-        animateEntrance();
-
     }
 
-    private void loadAssets() {
-        // TODO: Sesuaikan nama file PNG-mu di sini!
-        // Pastikan file-file ini ada di folder android/assets/ui/
-        try {
-            titleTex       = loadTex("ui/mainmenu/TITLE.png");
-            btnNewGameTex  = loadTex("ui/mainmenu/NEW_GAME.png");
-            btnContinueTex = loadTex("ui/mainmenu/CONTINUE.png");
-            btnStoryTex    = loadTex("ui/mainmenu/STORY_LOG.png");
-            btnSettingsTex = loadTex("ui/mainmenu/SETTINGS.png");
-            btnCreditsTex  = loadTex("ui/mainmenu/CREDIT.png");
-            btnExitTex     = loadTex("ui/mainmenu/EXIT.png");
-        } catch (Exception e) {
-            Gdx.app.error("UI_ASSETS", "Gagal load gambar PNG! Pastikan nama file benar.", e);
+    @Override
+    public void show() {
+        super.show();
+        initVideoBackgroundIfNeeded();
+        animateEntrance();
+
+        if (videoPlayer != null) {
+            videoPlayer.play();
         }
     }
 
-    // Helper method agar tekstur otomatis masuk ke daftar pembersihan
-    private Texture loadTex(String path) {
-        Texture tex = new Texture(Gdx.files.internal(path));
-        // Matikan filter blur agar gambar tetap tajam kalau di-scale
-        tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        loadedTextures.add(tex);
-        return tex;
+    private void initVideoBackgroundIfNeeded() {
+        if (videoInitialized) return;
+        videoInitialized = true;
+
+        FileHandle videoFile = Gdx.files.internal(VIDEO_PATH);
+        Gdx.app.log("MAIN_MENU_VIDEO", "Init video: " + videoFile.path());
+
+        if (!videoFile.exists()) {
+            Gdx.app.error("MAIN_MENU_VIDEO", "File video tidak ditemukan: " + videoFile.path());
+            videoAvailable = false;
+            createOverlay();
+            return;
+        }
+
+        try {
+            videoPlayer = VideoPlayerCreator.createVideoPlayer();
+
+            boolean loaded = videoPlayer.load(videoFile);
+            if (!loaded) {
+                Gdx.app.error("MAIN_MENU_VIDEO", "Video gagal di-load oleh decoder.");
+                videoAvailable = false;
+                createOverlay();
+                return;
+            }
+
+            videoPlayer.setLooping(true);
+            videoPlayer.setVolume(VIDEO_MUTE_VOLUME);
+            videoPlayer.play();
+
+            videoAvailable = true;
+            Gdx.app.log("MAIN_MENU_VIDEO", "Video berhasil di-load dan diputar.");
+        } catch (Exception e) {
+            Gdx.app.error("MAIN_MENU_VIDEO", "Gagal inisialisasi video player.", e);
+            videoAvailable = false;
+        }
+
+        createOverlay();
+    }
+
+    private void createOverlay() {
+        if (darkOverlayTex != null) return;
+
+        Pixmap pix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pix.setColor(0f, 0f, 0f, OVERLAY_ALPHA);
+        pix.fill();
+        darkOverlayTex = new Texture(pix);
+        pix.dispose();
+    }
+
+    private void loadAssets() {
+        bgFallbackTex  = loadTexSafe("ui/mainmenu/BG_FALLBACK.png");
+
+        titleTex       = loadTexSafe("ui/mainmenu/TITLE.png");
+        btnNewGameTex  = loadTexSafe("ui/mainmenu/NEW_GAME.png");
+        btnContinueTex = loadTexSafe("ui/mainmenu/CONTINUE.png");
+        btnStoryTex    = loadTexSafe("ui/mainmenu/STORY_LOG.png");
+        btnSettingsTex = loadTexSafe("ui/mainmenu/SETTINGS.png");
+        btnCreditsTex  = loadTexSafe("ui/mainmenu/CREDIT.png");
+        btnExitTex     = loadTexSafe("ui/mainmenu/EXIT.png");
+
+        if (bgFallbackTex == null) {
+            Pixmap pixmap = new Pixmap(1920, 1080, Pixmap.Format.RGB888);
+            pixmap.setColor(new Color(0.15f, 0.05f, 0.05f, 1f));
+            pixmap.fill();
+            bgFallbackTex = new Texture(pixmap);
+            loadedTextures.add(bgFallbackTex);
+            pixmap.dispose();
+        }
+    }
+
+    private Texture loadTexSafe(String path) {
+        try {
+            FileHandle file = Gdx.files.internal(path);
+            if (!file.exists()) {
+                Gdx.app.error("UI_ASSETS", "File tidak ditemukan: " + path);
+                return null;
+            }
+
+            Texture tex = new Texture(file);
+            tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            loadedTextures.add(tex);
+            return tex;
+        } catch (Exception e) {
+            Gdx.app.error("UI_ASSETS", "Gagal load texture: " + path, e);
+            return null;
+        }
     }
 
     private void setupUI() {
@@ -71,48 +157,41 @@ public class MainMenuScreen extends BaseScreen {
         mainTable.setFillParent(true);
         mainTable.left().padLeft(150);
 
-        // JUDUL GAME
         if (titleTex != null) {
             Image titleImage = new Image(titleTex);
             mainTable.add(titleImage).size(600, 200).padBottom(80).left().row();
         }
 
-        // TOMBOL-TOMBOL (MURNI GAMBAR PNG)
-
         if (btnNewGameTex != null) {
-            addMenuImageButton(btnNewGameTex, new Runnable() {
-                @Override public void run() { startGame(); }
-            });
+            addMenuImageButton(btnNewGameTex, () -> startGame());
         }
 
         if (btnContinueTex != null) {
-            addMenuImageButton(btnContinueTex, new Runnable() {
-                @Override public void run() { /* TODO: Load Save Game */ }
+            addMenuImageButton(btnContinueTex, () -> {
+                // TODO: Load save game
             });
         }
 
         if (btnStoryTex != null) {
-            addMenuImageButton(btnStoryTex, new Runnable() {
-                @Override public void run() { ScreenManager.getInstance().setScreen(new StoryMenuScreen(), new FadeTransition(0.5f)); }
-            });
+            addMenuImageButton(btnStoryTex, () ->
+                ScreenManager.getInstance().setScreen(new StoryMenuScreen(), new FadeTransition(0.5f))
+            );
         }
 
         if (btnSettingsTex != null) {
-            addMenuImageButton(btnSettingsTex, new Runnable() {
-                @Override public void run() { ScreenManager.getInstance().setScreen(new SettingsScreen(), new FadeTransition(0.5f)); }
-            });
+            addMenuImageButton(btnSettingsTex, () ->
+                ScreenManager.getInstance().setScreen(new SettingsScreen(), new FadeTransition(0.5f))
+            );
         }
 
         if (btnCreditsTex != null) {
-            addMenuImageButton(btnCreditsTex, new Runnable() {
-                @Override public void run() { ScreenManager.getInstance().setScreen(new CreditsScreen(), new FadeTransition(0.5f)); }
-            });
+            addMenuImageButton(btnCreditsTex, () ->
+                ScreenManager.getInstance().setScreen(new CreditsScreen(), new FadeTransition(0.5f))
+            );
         }
 
         if (btnExitTex != null) {
-            addMenuImageButton(btnExitTex, new Runnable() {
-                @Override public void run() { Gdx.app.exit(); }
-            });
+            addMenuImageButton(btnExitTex, () -> Gdx.app.exit());
         }
 
         stage.addActor(mainTable);
@@ -127,16 +206,16 @@ public class MainMenuScreen extends BaseScreen {
             }
         });
 
-        // Setup ukuran dasar tombol png
         mainTable.add(btn).size(300, 80).padBottom(20).left().row();
     }
 
-
-    private  void beginThemeSound()  {
+    private void beginThemeSound() {
         AudioManager.getInstance().playMusic(AudioTrack.THEME, 1.5f);
     }
+
     private void animateEntrance() {
-        // Efek ui entrance
+        if (mainTable == null) return;
+
         float delay = 0f;
         for (com.badlogic.gdx.scenes.scene2d.Actor actor : mainTable.getChildren()) {
             actor.addAction(Actions.sequence(
@@ -157,11 +236,77 @@ public class MainMenuScreen extends BaseScreen {
     }
 
     @Override
+    public void render(float delta) {
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+        stage.act(delta);
+
+        SpriteBatch batch = (SpriteBatch) stage.getBatch();
+        batch.begin();
+
+        int screenW = Gdx.graphics.getWidth();
+        int screenH = Gdx.graphics.getHeight();
+
+        boolean drawn = false;
+
+        if (videoAvailable && videoPlayer != null) {
+            videoPlayer.update();
+            Texture frame = videoPlayer.getTexture();
+
+            if (frame != null) {
+                drawCover(batch, frame, screenW, screenH);
+                drawn = true;
+            }
+        }
+
+        if (!drawn && bgFallbackTex != null) {
+            drawCover(batch, bgFallbackTex, screenW, screenH);
+        }
+
+        if (darkOverlayTex != null) {
+            batch.draw(darkOverlayTex, 0, 0, screenW, screenH);
+        }
+
+        batch.end();
+        stage.draw();
+    }
+
+    private void drawCover(SpriteBatch batch, Texture tex, int screenW, int screenH) {
+        float texW = tex.getWidth();
+        float texH = tex.getHeight();
+
+        float scale = Math.max((float) screenW / texW, (float) screenH / texH);
+        float drawW = texW * scale;
+        float drawH = texH * scale;
+        float x = (screenW - drawW) * 0.5f;
+        float y = (screenH - drawH) * 0.5f;
+
+        batch.draw(tex, x, y, drawW, drawH);
+    }
+
+    @Override
+    public void hide() {
+        super.hide();
+        if (videoPlayer != null) {
+            videoPlayer.pause();
+        }
+    }
+
+    @Override
     public void dispose() {
         super.dispose();
 
-        // PENTING SEKALI: Bersihkan semua RAM dari gambar PNG saat menu ini ditutup!
-        // Inilah yang mencegah game kamu Crash atau Not Responding.
+        if (videoPlayer != null) {
+            videoPlayer.dispose();
+            videoPlayer = null;
+        }
+
+        if (darkOverlayTex != null) {
+            darkOverlayTex.dispose();
+            darkOverlayTex = null;
+        }
+
         for (Texture tex : loadedTextures) {
             if (tex != null) tex.dispose();
         }

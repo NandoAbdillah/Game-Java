@@ -79,7 +79,7 @@ dependencies {
   natives "games.rednblack.miniaudio:gdx-miniaudio-platform:$miniaudioVersion:natives-armeabi-v7a"
   natives "games.rednblack.miniaudio:gdx-miniaudio-platform:$miniaudioVersion:natives-x86"
   natives "games.rednblack.miniaudio:gdx-miniaudio-platform:$miniaudioVersion:natives-x86_64"
-
+  implementation "com.badlogicgames.gdx-video:gdx-video-android:1.3.3"
 }
 
 // Called every time gradle gets executed, takes the native dependencies of
