@@ -34,7 +34,8 @@ import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider;
 import net.mgsx.gltf.scene3d.shaders.PBRShaderConfig;
 import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider;
 
-import com.bismillahjuara.game.entity.SukmaGowong;
+// HAPUS IMPORT INI
+// import com.bismillahjuara.game.entity.SukmaGowong;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +52,8 @@ public class WorldMap {
     private SceneAsset mapAsset;
     private Scene mapScene;
 
-    // --- DAFTAR MUSUH DI MAP INI ---
-    private Array<SukmaGowong> enemies = new Array<>();
+    // HAPUS ARRAY MUSUH INI KARENA SUDAH DIURUS ENTITY MANAGER
+    // private Array<SukmaGowong> enemies = new Array<>();
 
     public WorldMap() {
         // 1. SETUP MODEL BATCH (Untuk box/pohon dummy lama)
@@ -65,28 +66,13 @@ public class WorldMap {
 
         buildWorld(); // Logika dummy lama tetap dieksekusi!
 
-        // 2. SETUP SCENE MANAGER (Untuk merender Map.glb secara Realistis)
-//        setupGLTFMap();
-
-        // 3. SEBAR MUSUH DI MAP
-        spawnEnemies();
+        // HAPUS PEMANGGILAN SPAWN MUSUH
+        // spawnEnemies();
     }
 
-    private void spawnEnemies() {
-        // Membuat 3 SukmaGowong di koordinat yang berbeda-beda
-        // Koordinat Y diatur ke 0 agar napak tanah
-        enemies.add(new SukmaGowong(new Vector3(10f, 0f, 15f)));
-        enemies.add(new SukmaGowong(new Vector3(-12f, 0f, 8f)));
-        enemies.add(new SukmaGowong(new Vector3(5f, 0f, -18f)));
-    }
-
-    // Fungsi baru untuk mengupdate logika AI semua musuh di map
-    // Fungsi ini dipanggil dari GameScreen setiap frame
-    public void updateEnemies(float delta, Vector3 playerPosition) {
-        for (SukmaGowong enemy : enemies) {
-            enemy.updateAI(delta, playerPosition);
-        }
-    }
+    // HAPUS METHOD spawnEnemies() DAN updateEnemies() KESELURUHAN
+    // private void spawnEnemies() { ... }
+    // public void updateEnemies(float delta, Vector3 playerPosition) { ... }
 
     private void setupGLTFMap() {
         // Konfigurasi PBR Shader anti-crash
@@ -111,7 +97,7 @@ public class WorldMap {
 
         // LOAD FILE Map.glb
         // PASTIKAN NAMA DAN FOLDERNYA BENAR! (Misal: ada di android/assets/models/Map.glb)
-        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps.glb"));
+        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Map.glb"));
         mapScene = new Scene(mapAsset.scene);
 
         sceneManager.addScene(mapScene);
@@ -232,10 +218,10 @@ public class WorldMap {
         }
         modelBatch.end();
 
-        // Render Para Musuh (SukmaGowong)
-        for (SukmaGowong enemy : enemies) {
-            enemy.render(cam);
-        }
+        // HAPUS RENDER MUSUH LAMA INI
+        // for (SukmaGowong enemy : enemies) {
+        //     enemy.render(cam);
+        // }
     }
 
     public void dispose() {
@@ -247,9 +233,9 @@ public class WorldMap {
         if (sceneManager != null) sceneManager.dispose();
         if (mapAsset != null) mapAsset.dispose();
 
-        // Buang memori musuh
-        for (SukmaGowong enemy : enemies) {
-            enemy.dispose();
-        }
+        // HAPUS DISPOSE MUSUH LAMA
+        // for (SukmaGowong enemy : enemies) {
+        //     enemy.dispose();
+        // }
     }
 }
