@@ -1,9 +1,5 @@
 package com.bismillahjuara.game.audio;
 
-/**
- * Enum untuk Short Audio (RAM Loaded).
- * File berformat .wav/.ogg pendek, diload penuh ke RAM untuk latensi 0ms.
- */
 public enum AudioSFX {
     // --- UI ---
     UI_CLICK("sound/ui/click.wav"),
@@ -21,11 +17,14 @@ public enum AudioSFX {
     // --- PLAYER ACTIONS ---
     JUMP("sound/player/jump.wav"),
     LAND("sound/player/land.wav"),
+    JIMAT_THROW("sound/player/jimat_throw.wav"), // BARU
 
     // --- ENEMY ---
     ENEMY_ATTACK("sound/enemy/attack.wav"),
     ENEMY_DIE("sound/enemy/die.wav"),
     ENEMY_SCREAM("sound/enemy/scream.wav"),
+    ENEMY_BURN("sound/enemy/burn.wav"), // BARU
+    JUMPSCARE("sound/enemy/jumpscare.wav"), // BARU
 
     // --- ENVIRONMENT ---
     ENV_WATERFALL("sound/environment/waterfall.wav"),
