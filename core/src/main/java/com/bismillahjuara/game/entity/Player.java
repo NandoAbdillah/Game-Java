@@ -48,7 +48,10 @@ public class Player extends Entity {
     private Color baseGlow = new Color(0.05f, 0.05f, 0.08f, 1f), healGlow = new Color(0.1f, 0.9f, 0.3f, 1f), currentGlow = new Color(baseGlow);
     private float healGlowTimer = 0f, footstepTimer = 0f;
 
-    // CONSTRUCTOR FINAL: Menerima SceneAsset matang dari GameplayManager!
+    // --- FIX AAA: Cooldown 5 Detik! ---
+    private float lastThrowTime = 0f;
+    private static final float THROW_COOLDOWN = 5.0f;
+
     public Player(GameContext context, SceneAsset asset) {
         super(new Vector3(0, PLAYER_HEIGHT, 0), context);
         this.collisionRadius = 1.0f;
@@ -80,8 +83,15 @@ public class Player extends Entity {
 
     @Override
     public void update(float delta) {
-        if (dangerTimer > 0) dangerTimer -= delta * 0.5f;
         if (animationController != null) animationController.update(delta);
+    }
+
+    public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
+        if (currentState == State.DYING) return;
+
+        // FIX AAA: Pindahkan SEMUA timer ke sini agar DIJAMIN berjalan setiap frame!
+        if (lastThrowTime > 0) lastThrowTime -= delta;
+        if (dangerTimer > 0) dangerTimer -= delta * 0.5f;
 
         if (healGlowTimer > 0) {
             healGlowTimer -= delta;
@@ -94,16 +104,19 @@ public class Player extends Entity {
             ColorAttribute emissive = (ColorAttribute) mat.get(ColorAttribute.Emissive);
             if (emissive != null) emissive.color.set(currentGlow);
         }
-    }
-
-    public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
-        if (currentState == State.DYING) return;
 
         if (input.toggleCameraPressed) context.camera.toggleMode();
         if (input.diePressed) requestState(State.DYING);
         if (input.healPressed) requestState(State.HEAL);
         if (input.emotePressed) requestState(State.EMOTE);
-        if (input.throwPressed) { throwBiji(); requestState(State.THROW); }
+
+        // LOGIKA PENGECEKAN COOLDOWN 5 DETIK
+        if (input.throwPressed && lastThrowTime <= 0) {
+            throwBiji();
+            requestState(State.THROW);
+            lastThrowTime = THROW_COOLDOWN; // Kunci tombol 'E' selama 5 detik!
+        }
+
         if (input.kickPressed) requestState(State.KICK);
         if (input.attackPressed) requestState(State.COMBAT);
         if (input.jumpPressed) requestState(input.sprintHeld && (input.moveX != 0 || input.moveY != 0) ? State.JUMP_RUN : State.JUMP);
@@ -164,8 +177,18 @@ public class Player extends Entity {
 
     private void throwBiji() {
         float yawRad = MathUtils.degreesToRadians * yaw;
-        float spawnX = position.x + (-MathUtils.sin(yawRad) * 1.5f), spawnZ = position.z + (-MathUtils.cos(yawRad) * 1.5f);
-        for (int i = 0; i < 6; i++) context.entityManager.addEntity(new BijiTimunProjectile(new Vector3(spawnX, position.y + 2.5f, spawnZ), yaw + MathUtils.random(-15f, 15f), context));
+        float spawnX = position.x + (MathUtils.sin(yawRad) * 1.5f);
+        float spawnZ = position.z + (MathUtils.cos(yawRad) * 1.5f);
+
+        // Lempar 15 peluru menyebar!
+        for (int i = 0; i < 15; i++) {
+            context.entityManager.addEntity(new BijiTimunProjectile(
+                new Vector3(spawnX, position.y + 2.5f, spawnZ),
+                yaw + MathUtils.random(-35f, 35f),
+                context,
+                (i == 0) // FIX: Hanya peluru pertama yang bunyi, biar HP ga ngelag/budek!
+            ));
+        }
     }
 
     private void requestState(State requested) {
