@@ -9,11 +9,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.audio.AudioSFX;
-import com.bismillahjuara.game.camera.AdvancedCameraSystem;
-import com.bismillahjuara.game.core.GameplayManager;
 import com.bismillahjuara.game.core.GameplayState;
 import com.bismillahjuara.game.hud.HudManager;
 import com.bismillahjuara.game.input.GameInputHandler;
+import com.bismillahjuara.game.camera.AdvancedCameraSystem;
+import com.bismillahjuara.game.managers.GameplayManager;
 import com.bismillahjuara.game.transitions.FadeTransition;
 
 public class GameScreen implements Screen {
@@ -23,48 +23,45 @@ public class GameScreen implements Screen {
     private GameInputHandler inputHandler;
     private AdvancedCameraSystem camera;
 
+    // Jumpscare variables
     private boolean isJumpscareTriggered = false;
     private float jumpscareTimer = 0f;
     private Image jumpscareOverlay;
     private Texture bloodyTexture;
 
-    public GameScreen() {}
-
-    public void initWorld() {
+    public GameScreen() {
         gameplayManager = new GameplayManager();
-        gameplayManager.buildWorld();
     }
 
-    public void initEntities() {
+    // =========================================================================
+    // AAA LOADING EXPOSURE UNTUK ASYNC LOADER
+    // =========================================================================
+    public GameplayManager getGameplayManager() {
+        return gameplayManager;
+    }
+
+    public void initCamera() {
         camera = new AdvancedCameraSystem();
-        gameplayManager.buildEntities(camera);
     }
 
-
+    // Tahap inisialisasi dipecah untuk Loader
+    public void initEntities() {
+        long startTime = System.currentTimeMillis();
+        gameplayManager.buildEntities(camera);
+        Gdx.app.log("PROFILE_GAMESCREEN", "Init Entities selesai: " + (System.currentTimeMillis() - startTime) + " ms");
+    }
 
     public void initUI() {
+        long startTime = System.currentTimeMillis();
         hudManager = new HudManager();
         inputHandler = new GameInputHandler(camera, hudManager);
         gameplayManager.bindInput(inputHandler);
         setupJumpscareUI();
-
-        hudManager.getPauseMenuUI().onResumeCallback = new Runnable() {
-            @Override public void run() { resumeGame(); }
-        };
-
-        hudManager.getPauseMenuUI().onMainMenuCallback = new Runnable() {
-            @Override public void run() {
-                ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(1f));
-            }
-        };
-
-        hudManager.getPauseMenuUI().onExitGameCallback = new Runnable() {
-            @Override public void run() { Gdx.app.exit(); }
-        };
+        Gdx.app.log("PROFILE_GAMESCREEN", "Init UI selesai: " + (System.currentTimeMillis() - startTime) + " ms");
     }
+    // =========================================================================
 
     private void setupJumpscareUI() {
-        // Buat filter merah darah murni menggunakan kode
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(new Color(0.8f, 0f, 0f, 0.6f));
         pixmap.fill();
@@ -75,7 +72,7 @@ public class GameScreen implements Screen {
         jumpscareOverlay.setFillParent(true);
         jumpscareOverlay.setVisible(false);
 
-        hudManager.getStage().addActor(jumpscareOverlay); // Taruh di layer paling atas
+        hudManager.getStage().addActor(jumpscareOverlay);
     }
 
     private void pauseGame() {
@@ -104,20 +101,15 @@ public class GameScreen implements Screen {
 
         if (gameplayManager.getContext().state == GameplayState.GAME_OVER) {
             handleJumpscareSequence(delta);
-            return; // Hentikan semua input dan logika gameplay
+            return;
         }
 
-        // =========================================================
-        // FIX BUG: UPDATE INPUT HARUS DI ATAS!
-        // Agar status ESC yang ditekan segera dikonsumsi dan tidak ketinggalan 1 frame.
-        // =========================================================
         inputHandler.update(delta);
 
-        // CEK INTENT PAUSE (Dari Keyboard ESC atau Mobile Button)
         boolean isMobilePauseClicked = (hudManager.getMobileControls() != null && hudManager.getMobileControls().isPauseClicked());
 
         if (inputHandler.getAction().pausePressed || isMobilePauseClicked) {
-            inputHandler.getAction().pausePressed = false; // Langsung Hapus/Konsumsi Event
+            inputHandler.getAction().pausePressed = false;
 
             if (gameplayManager.getContext().state == GameplayState.PLAYING) {
                 pauseGame();
@@ -126,34 +118,26 @@ public class GameScreen implements Screen {
             }
         }
 
-        // UPDATE LOGIC
         gameplayManager.update(delta);
-
-        // RENDER 3D & UI
         gameplayManager.render(delta);
-        hudManager.updateAndRender(com.badlogic.gdx.math.Vector3.Zero, camera.getYaw());
+        hudManager.updateAndRender(gameplayManager.getContext().player.getPosition(), camera.getYaw());
     }
 
     private void handleJumpscareSequence(float delta) {
         if (!isJumpscareTriggered) {
             isJumpscareTriggered = true;
-            AudioManager.getInstance().stopMusic(0f); // Cut instan!
+            AudioManager.getInstance().stopMusic(0f);
             AudioManager.getInstance().playSFX(AudioSFX.JUMPSCARE);
             jumpscareOverlay.setVisible(true);
         }
 
         jumpscareTimer += delta;
-
-        // Efek Flickering (Kibas-kedip mengerikan)
         jumpscareOverlay.getColor().a = com.badlogic.gdx.math.MathUtils.random(0.3f, 1.0f);
 
-        // Setelah 2 detik diteriakin, buang ke layar Game Over
         if (jumpscareTimer > 2.0f) {
             ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(2.0f));
-            // TODO: Nanti ubah MainMenuScreen menjadi GameOverScreen jika classnya sudah kamu buat
         }
 
-        // Tetap render 3D di belakang agar terasa nyata, tapi beku (delta = 0)
         gameplayManager.render(0f);
         hudManager.getStage().draw();
     }
@@ -172,5 +156,6 @@ public class GameScreen implements Screen {
     public void dispose() {
         if (gameplayManager != null) gameplayManager.dispose();
         if (hudManager != null) hudManager.dispose();
+        if (bloodyTexture != null) bloodyTexture.dispose();
     }
 }
