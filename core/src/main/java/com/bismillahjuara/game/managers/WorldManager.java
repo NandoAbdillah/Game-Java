@@ -25,17 +25,12 @@ public class WorldManager {
     private Scene mapScene;
     private float mapScale = 10f;
 
-    // ==========================================================
-    // AAA DYNAMIC MAP BOUNDARY & SAFE PLAY AREA
-    // ==========================================================
     public BoundingBox mapBounds;
     public float safePlayMargin = 15f;
 
-    // --- DEBUG SPAWN POINTS ---
     public Vector3 playerSpawnPos = new Vector3();
     public Array<Vector3> enemySpawnPositions = new Array<>(false, 10);
 
-    // --- AAA SMART RENDERING & HYBRID CULLING SYSTEM ---
     private static final float CHUNK_SIZE = 30f;
     private static final float SHOW_DISTANCE = 75f;
     private static final float HIDE_DISTANCE = 90f;
@@ -90,6 +85,10 @@ public class WorldManager {
     private Vector3 tempCenter = new Vector3();
     private Vector3 tempDim = new Vector3();
 
+    // --- AAA TIME-SLICED PIPELINE VARIABLES ---
+    private Array<Node> nodeQueue; // Antrean node yang belum diproses
+    private int totalNodesToProcess = 0;
+
     public WorldManager(GameContext context) {
         this.context = context;
         this.spatialHash = new LongMap<>();
@@ -97,43 +96,131 @@ public class WorldManager {
         this.activeChunks = new Array<>(false, 64);
         this.largeObjects = new Array<>(false, 16);
         this.mapBounds = new BoundingBox();
+        this.nodeQueue = new Array<>(false, 1024);
     }
 
-    public void initialize(SceneRenderer renderer) {
-        try {
-            if (isDebugMode) debugRenderer = new ShapeRenderer();
+    // =========================================================================
+    // TAHAP 1: BACA FILE FISIK DARI HARDDISK (I/O)
+    // =========================================================================
+    public void step1_LoadMapDisk() {
+        long startTime = System.currentTimeMillis();
+        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps.glb"));
+        Gdx.app.log("PROFILE_WORLD", "Load Map.glb dari Disk selesai: " + (System.currentTimeMillis() - startTime) + " ms");
+    }
 
-            mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps.glb"));
-            mapScene = new Scene(mapAsset.scene);
+    // =========================================================================
+    // TAHAP 2: BANGUN SCENE DAN SIAPKAN ANTREAN NODE
+    // =========================================================================
+    public void step2_BuildSceneAndQueue(SceneRenderer renderer) {
+        long startTime = System.currentTimeMillis();
+        if (isDebugMode) debugRenderer = new ShapeRenderer();
 
-            mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
-            mapScene.modelInstance.calculateTransforms();
+        mapScene = new Scene(mapAsset.scene);
+        mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
+        mapScene.modelInstance.calculateTransforms();
 
-            mapScene.modelInstance.calculateBoundingBox(mapBounds);
-            mapBounds.mul(mapScene.modelInstance.transform);
+        mapScene.modelInstance.calculateBoundingBox(mapBounds);
+        mapBounds.mul(mapScene.modelInstance.transform);
 
-            Gdx.app.log("MAP_BOUNDARY", "--- PERHITUNGAN BATAS DUNIA ---");
-            Gdx.app.log("MAP_BOUNDARY", "BATAS ASLI MIN [X: " + mapBounds.min.x + ", Z: " + mapBounds.min.z + "]");
-            Gdx.app.log("MAP_BOUNDARY", "BATAS ASLI MAX [X: " + mapBounds.max.x + ", Z: " + mapBounds.max.z + "]");
-            Gdx.app.log("MAP_BOUNDARY", "AREA BERMAIN (X): " + (mapBounds.min.x + safePlayMargin) + " sampai " + (mapBounds.max.x - safePlayMargin));
+        renderer.addScene(mapScene);
 
-            Gdx.app.log("WORLD", "Memulai Ekstraksi Pipeline...");
-            scanAndRegisterNodes(mapScene.modelInstance.nodes);
+        // Jangan proses langsung! Ratakan hirarki tree (Flatten) dan masukkan ke Queue
+        flattenNodeTree(mapScene.modelInstance.nodes);
+        totalNodesToProcess = nodeQueue.size;
 
-            renderer.addScene(mapScene);
+        Gdx.app.log("PROFILE_WORLD", "Build Scene & Flatten " + totalNodesToProcess + " nodes selesai: " + (System.currentTimeMillis() - startTime) + " ms");
+    }
 
-            for (VisibilityChunk chunk : allChunks) {
-                for (VisibilityObject vo : chunk.objects) vo.setVisible(false);
+    private void flattenNodeTree(Iterable<Node> nodes) {
+        for (Node node : nodes) {
+            nodeQueue.add(node);
+            if (node.hasChildren()) {
+                flattenNodeTree(node.getChildren());
             }
-
-        } catch (Exception e) {
-            Gdx.app.log("WORLD_WARNING", "Map gagal di-load.", e);
         }
     }
 
-    // --- HELPER UNTUK SPAWN PINTAR ---
+    // =========================================================================
+    // TAHAP 3: PROSES NODE SECARA NYICIL (TIME-SLICED)
+    // Return TRUE jika semua node sudah selesai diproses.
+    // =========================================================================
+    public boolean step3_ProcessNodesAsync() {
+        long startTime = System.currentTimeMillis();
+        int processedThisFrame = 0;
+        BoundingBox box = new BoundingBox();
 
-    /** Mengambil titik absolut tengah dari Safe Play Area */
+        // Batasi pemrosesan maksimal 15 milidetik per frame (Menjaga 60 FPS saat loading)
+        while (nodeQueue.size > 0 && (System.currentTimeMillis() - startTime) < 15) {
+            Node node = nodeQueue.pop(); // Ambil dari belakang (cepat)
+            processSingleNode(node, box);
+            processedThisFrame++;
+        }
+
+        // Jika antrean habis, sembunyikan semua secara default
+        if (nodeQueue.size == 0) {
+            for (VisibilityChunk chunk : allChunks) {
+                for (VisibilityObject vo : chunk.objects) vo.setVisible(false);
+            }
+            Gdx.app.log("PROFILE_WORLD", "Pemindaian " + totalNodesToProcess + " Nodes TUNTAS. Collisions: " + collisionCount + ", Visuals: " + visualCount);
+            return true;
+        }
+
+        return false; // Belum selesai, lanjut frame berikutnya
+    }
+
+    private void processSingleNode(Node node, BoundingBox box) {
+        String nodeName = node.id != null ? node.id.toLowerCase() : "unnamed";
+
+        if (nodeName.contains("pohon_col") || nodeName.contains("collider")) {
+            box.inf();
+            node.calculateBoundingBox(box, true);
+            if (box.isValid()) {
+                box.mul(mapScene.modelInstance.transform);
+                box.getCenter(tempCenter);
+
+                int cX = MathUtils.floor(tempCenter.x / CHUNK_SIZE);
+                int cZ = MathUtils.floor(tempCenter.z / CHUNK_SIZE);
+                getOrCreateChunk(cX, cZ).collisions.add(new BoundingBox(box));
+                collisionCount++;
+            }
+
+            for (NodePart part : node.parts) part.enabled = false;
+            node.isAnimated = false;
+        }
+        else if (node.parts.size > 0) {
+            box.inf();
+            node.calculateBoundingBox(box, true);
+
+            if (box.isValid()) {
+                box.mul(mapScene.modelInstance.transform);
+                box.getCenter(tempCenter);
+                box.getDimensions(tempDim);
+
+                float radius = tempDim.len() / 2f;
+                float maxDim = Math.max(tempDim.x, Math.max(tempDim.y, tempDim.z));
+
+                VisibilityObject vo = new VisibilityObject(node, tempCenter, radius);
+
+                if (maxDim > 40f) {
+                    largeObjects.add(vo);
+                    largeObjectCount++;
+                    vo.setVisible(true);
+                } else {
+                    int cX = MathUtils.floor(tempCenter.x / CHUNK_SIZE);
+                    int cZ = MathUtils.floor(tempCenter.z / CHUNK_SIZE);
+                    getOrCreateChunk(cX, cZ).objects.add(vo);
+                    visualCount++;
+                }
+            }
+        }
+    }
+
+    public float getAsyncProgress() {
+        if (totalNodesToProcess == 0) return 0f;
+        return 1f - ((float)nodeQueue.size / totalNodesToProcess);
+    }
+
+    // --- HELPER UNTUK SPAWN PINTAR ---
     public void getSafeCenterPosition(Vector3 out) {
         float safeMinX = mapBounds.min.x + safePlayMargin;
         float safeMaxX = mapBounds.max.x - safePlayMargin;
@@ -142,7 +229,6 @@ public class WorldManager {
         out.set((safeMinX + safeMaxX) / 2f, 0, (safeMinZ + safeMaxZ) / 2f);
     }
 
-    /** Mengambil posisi acak murni di dalam Safe Play Area */
     public void getRandomSafePosition(Vector3 out) {
         float safeMinX = mapBounds.min.x + safePlayMargin;
         float safeMaxX = mapBounds.max.x - safePlayMargin;
@@ -165,61 +251,6 @@ public class WorldManager {
             allChunks.add(chunk);
         }
         return chunk;
-    }
-
-    private void scanAndRegisterNodes(Iterable<Node> nodes) {
-        BoundingBox box = new BoundingBox();
-
-        for (Node node : nodes) {
-            String nodeName = node.id != null ? node.id.toLowerCase() : "unnamed";
-
-            if (nodeName.contains("pohon_col") || nodeName.contains("collider")) {
-                box.inf();
-                node.calculateBoundingBox(box, true);
-                if (box.isValid()) {
-                    box.mul(mapScene.modelInstance.transform);
-                    box.getCenter(tempCenter);
-
-                    int cX = MathUtils.floor(tempCenter.x / CHUNK_SIZE);
-                    int cZ = MathUtils.floor(tempCenter.z / CHUNK_SIZE);
-                    getOrCreateChunk(cX, cZ).collisions.add(new BoundingBox(box));
-                    collisionCount++;
-                }
-
-                for (NodePart part : node.parts) part.enabled = false;
-                node.isAnimated = false;
-            }
-            else if (node.parts.size > 0) {
-                box.inf();
-                node.calculateBoundingBox(box, true);
-
-                if (box.isValid()) {
-                    box.mul(mapScene.modelInstance.transform);
-                    box.getCenter(tempCenter);
-                    box.getDimensions(tempDim);
-
-                    float radius = tempDim.len() / 2f;
-                    float maxDim = Math.max(tempDim.x, Math.max(tempDim.y, tempDim.z));
-
-                    VisibilityObject vo = new VisibilityObject(node, tempCenter, radius);
-
-                    if (maxDim > 40f) {
-                        largeObjects.add(vo);
-                        largeObjectCount++;
-                        vo.setVisible(true);
-                    } else {
-                        int cX = MathUtils.floor(tempCenter.x / CHUNK_SIZE);
-                        int cZ = MathUtils.floor(tempCenter.z / CHUNK_SIZE);
-                        getOrCreateChunk(cX, cZ).objects.add(vo);
-                        visualCount++;
-                    }
-                }
-            }
-
-            if (node.hasChildren()) {
-                scanAndRegisterNodes(node.getChildren());
-            }
-        }
     }
 
     public void update(float fixedDelta) {
@@ -298,19 +329,12 @@ public class WorldManager {
 
     public void renderDebug(PerspectiveCamera cam) {
         if (!isDebugMode || debugRenderer == null) return;
-
         debugRenderer.setProjectionMatrix(cam.combined);
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);
 
-        // 1. MENGGAMBAR BOUNDARY ASLI MAP (KUNING)
         debugRenderer.setColor(Color.YELLOW);
-        float origMinX = mapBounds.min.x;
-        float origMinZ = mapBounds.min.z;
-        float origWidth = mapBounds.max.x - origMinX;
-        float origDepth = mapBounds.max.z - origMinZ;
-        debugRenderer.box(origMinX, 0, origMinZ, origWidth, 50f, origDepth);
+        debugRenderer.box(mapBounds.min.x, 0, mapBounds.min.z, mapBounds.max.x - mapBounds.min.x, 50f, mapBounds.max.z - mapBounds.min.z);
 
-        // 2. MENGGAMBAR SAFE PLAY AREA (HIJAU)
         debugRenderer.setColor(Color.GREEN);
         float safeMinX = mapBounds.min.x + safePlayMargin;
         float safeMinZ = mapBounds.min.z + safePlayMargin;
@@ -318,19 +342,16 @@ public class WorldManager {
         float safeDepth = (mapBounds.max.z - safePlayMargin) - safeMinZ;
         debugRenderer.box(safeMinX, 0, safeMinZ, safeWidth, 50f, safeDepth);
 
-        // 3. MENGGAMBAR TITIK SPAWN PLAYER (BIRU)
         if (playerSpawnPos != null) {
             debugRenderer.setColor(Color.BLUE);
             debugRenderer.box(playerSpawnPos.x - 0.5f, 0, playerSpawnPos.z - 0.5f, 1f, 3f, 1f);
         }
 
-        // 4. MENGGAMBAR TITIK SPAWN MUSUH (MERAH)
         debugRenderer.setColor(Color.RED);
         for (Vector3 ePos : enemySpawnPositions) {
             debugRenderer.box(ePos.x - 0.5f, 0, ePos.z - 0.5f, 1f, 3f, 1f);
         }
 
-        // 5. MENGGAMBAR COLLISION POHON (MERAH GELAP)
         debugRenderer.setColor(new Color(0.5f, 0f, 0f, 1f));
         for (int i = 0; i < allChunks.size; i++) {
             Array<BoundingBox> colls = allChunks.get(i).collisions;
@@ -349,5 +370,6 @@ public class WorldManager {
         allChunks.clear();
         activeChunks.clear();
         largeObjects.clear();
+        nodeQueue.clear();
     }
 }
