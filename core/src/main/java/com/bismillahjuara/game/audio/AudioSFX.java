@@ -33,7 +33,8 @@ public enum AudioSFX {
 
     // --- WEATHER (THUNDER) ---
     ENV_THUNDER_1("sound/environment/thunder.ogg"),
-    ENV_THUNDER_2("sound/environment/thunder.ogg");
+    ENV_THUNDER_2("sound/environment/thunder.ogg"),
+    SEED_SHOOT("sound/player/jimat_throw.wav");
 //    ENV_THUNDER_2("sound/environment/thunder_02.ogg"),
 //    ENV_THUNDER_3("sound/environment/thunder_03.ogg");
 
