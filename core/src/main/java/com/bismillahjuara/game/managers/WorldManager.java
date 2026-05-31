@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.LongMap;
+import com.bismillahjuara.game.assets.GameAssets;
 import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.core.SceneRenderer;
 
@@ -111,9 +112,32 @@ public class WorldManager {
     // =========================================================================
     // TAHAP 2: BANGUN SCENE DAN SIAPKAN ANTREAN NODE
     // =========================================================================
+//    public void step2_BuildSceneAndQueue(SceneRenderer renderer) {
+//        long startTime = System.currentTimeMillis();
+//        if (isDebugMode) debugRenderer = new ShapeRenderer();
+//
+//        mapScene = new Scene(mapAsset.scene);
+//        mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
+//        mapScene.modelInstance.calculateTransforms();
+//
+//        mapScene.modelInstance.calculateBoundingBox(mapBounds);
+//        mapBounds.mul(mapScene.modelInstance.transform);
+//
+//        renderer.addScene(mapScene);
+//
+//        // Jangan proses langsung! Ratakan hirarki tree (Flatten) dan masukkan ke Queue
+//        flattenNodeTree(mapScene.modelInstance.nodes);
+//        totalNodesToProcess = nodeQueue.size;
+//
+//        Gdx.app.log("PROFILE_WORLD", "Build Scene & Flatten " + totalNodesToProcess + " nodes selesai: " + (System.currentTimeMillis() - startTime) + " ms");
+//    }
+
     public void step2_BuildSceneAndQueue(SceneRenderer renderer) {
         long startTime = System.currentTimeMillis();
         if (isDebugMode) debugRenderer = new ShapeRenderer();
+
+        // MENGAMBIL ASET MATANG DARI CACHE (0 ms I/O)
+        mapAsset = GameAssets.getInstance().manager.get(GameAssets.MAP_GLB, SceneAsset.class);
 
         mapScene = new Scene(mapAsset.scene);
         mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
@@ -124,13 +148,11 @@ public class WorldManager {
 
         renderer.addScene(mapScene);
 
-        // Jangan proses langsung! Ratakan hirarki tree (Flatten) dan masukkan ke Queue
         flattenNodeTree(mapScene.modelInstance.nodes);
         totalNodesToProcess = nodeQueue.size;
 
-        Gdx.app.log("PROFILE_WORLD", "Build Scene & Flatten " + totalNodesToProcess + " nodes selesai: " + (System.currentTimeMillis() - startTime) + " ms");
+        Gdx.app.log("PROFILE_WORLD", "Build Scene 22k nodes selesai: " + (System.currentTimeMillis() - startTime) + " ms");
     }
-
     private void flattenNodeTree(Iterable<Node> nodes) {
         for (Node node : nodes) {
             nodeQueue.add(node);
