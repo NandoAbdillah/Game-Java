@@ -5,17 +5,20 @@ import com.bismillahjuara.game.assets.GameAssets;
 import com.bismillahjuara.game.screens.GameScreen;
 
 /**
- * Time-Sliced Gameplay Initializer Memecah pembuatan World, Player, dan Shader menjadi beberapa frame agar Render Thread tidak pernah freeze ( Android).
+ * Time-Sliced Gameplay Initializer dengan Profiler Bawaan.
+ * Memecah pembuatan World menjadi beberapa frame agar Render Thread tidak freeze.
  */
 public class AsyncGameplayLoader {
 
     public enum LoadState {
-        QUEUE_ASSETS,   // Mendaftarkan file fisik ke AssetManager
-        WAIT_ASSETS,    // Menunggu AssetManager load file di background thread
-        INIT_SHADERS,   // Kompilasi shader PBR (Berat, dikerjakan 1 frame sendiri)
-        INIT_WORLD,     // Generate terrain & pohon (Berat, dikerjakan 1 frame sendiri)
-        INIT_ENTITIES,  // Spawn Player & Musuh
-        INIT_UI,        // Setup HUD & Controller
+        QUEUE_ASSETS,           // 0.0 - 0.1
+        WAIT_ASSETS,            // 0.1 - 0.3
+        INIT_SHADERS,           // 0.3 - 0.4
+        INIT_WORLD_READ_MAP,    // 0.4 - 0.5 (I/O)
+        INIT_WORLD_BUILD_SCENE, // 0.5 - 0.6 (GLTF Scene)
+        INIT_WORLD_SCAN_NODES,  // 0.6 - 0.8 (Async Node Scanner)
+        INIT_ENTITIES,          // 0.8 - 0.9
+        INIT_UI,                // 0.9 - 1.0
         DONE
     }
 
@@ -23,66 +26,113 @@ public class AsyncGameplayLoader {
     private GameScreen targetScreen;
     private float progress = 0f;
 
+    // Untuk Profiling
+    private long stepStartTime;
+    private long globalStartTime;
+
     public AsyncGameplayLoader() {
-        // Kita HANYA membuat wadahnya, isinya kosong. Tidak ada beban memori di sini.
         targetScreen = new GameScreen();
+        globalStartTime = System.currentTimeMillis();
     }
 
-    /**Dipanggil setiap frame oleh Layar Loading.
+    private void beginStep(String msg) {
+        Gdx.app.log("PROFILE_LOADER", ">>> Memulai: " + msg);
+        stepStartTime = System.currentTimeMillis();
+    }
 
-     */
+    private void endStep(String msg) {
+        long duration = System.currentTimeMillis() - stepStartTime;
+        Gdx.app.log("PROFILE_LOADER", "<<< Selesai: " + msg + " (" + duration + " ms)");
+    }
+
     public void update() {
         switch (currentState) {
             case QUEUE_ASSETS:
-//                Gdx.app.log("LOADER", "[1/6] Mengantre aset GLTF & Texture...");
-                GameAssets.getInstance().queueGameplayAssets(); // TODO: Buat method ini di GameAssets nanti
+                beginStep("Queue Assets");
+                GameAssets.getInstance().queueGameplayAssets();
+                endStep("Queue Assets");
+
                 progress = 0.1f;
                 currentState = LoadState.WAIT_ASSETS;
                 break;
 
             case WAIT_ASSETS:
-                // AssetManager bekerja di background thread (aman dari freeze)
                 if (GameAssets.getInstance().manager.update()) {
-                    progress = 0.5f; // File selesai di-load ke RAM
+                    progress = 0.3f;
                     currentState = LoadState.INIT_SHADERS;
                 } else {
-                    // Kalkulasi progress: 0.1 sampai 0.5 berdasarkan AssetManager
-                    progress = 0.1f + (GameAssets.getInstance().manager.getProgress() * 0.4f);
+                    progress = 0.1f + (GameAssets.getInstance().manager.getProgress() * 0.2f);
                 }
                 break;
 
             case INIT_SHADERS:
-                Gdx.app.log("LOADER", "[2/6] Memanaskan Shader PBR...");
-                // Shader warmup yang tadinya di Boot, kita pindah ke sini secara modular
+                beginStep("Shader Warmup");
                 com.bismillahjuara.game.assets.ShaderWarmup.executeWarmup();
-                progress = 0.6f;
-                currentState = LoadState.INIT_WORLD;
+                endStep("Shader Warmup");
+
+                progress = 0.4f;
+                currentState = LoadState.INIT_WORLD_READ_MAP;
                 break;
 
-            case INIT_WORLD:
-                Gdx.app.log("LOADER", "[3/6] Membangun World Map & Obstacle...");
-                // TODO: Nanti di dalam GameScreen, buat method initWorld() yang dipanggil di sini
-                targetScreen.initWorld();
-                progress = 0.8f;
-                currentState = LoadState.INIT_ENTITIES;
+            case INIT_WORLD_READ_MAP:
+                beginStep("Baca GLB Map Disk");
+                // Membaca file 3D ke memory (Bisa 100-300ms, tapi tidak membuat Android ANR karena hanya 1 frame)
+                targetScreen.getGameplayManager().buildWorldCore(); // Menyiapkan WorldManager murni
+                targetScreen.getGameplayManager().getContext().worldManager.step1_LoadMapDisk();
+                endStep("Baca GLB Map Disk");
+
+                progress = 0.5f;
+                currentState = LoadState.INIT_WORLD_BUILD_SCENE;
+                break;
+
+            case INIT_WORLD_BUILD_SCENE:
+                beginStep("Build Scene GLTF");
+                // Ekstraksi 3D Node
+                targetScreen.getGameplayManager().getContext().worldManager.step2_BuildSceneAndQueue(
+                    targetScreen.getGameplayManager().getContext().sceneRenderer
+                );
+                endStep("Build Scene GLTF");
+
+                progress = 0.6f;
+                currentState = LoadState.INIT_WORLD_SCAN_NODES;
+                break;
+
+            case INIT_WORLD_SCAN_NODES:
+                // TAHAP INI DIEKSEKUSI BERKALI-KALI (TIME-SLICED).
+                // Sangat ringan (Maksimal 15ms per frame)
+                boolean isScanDone = targetScreen.getGameplayManager().getContext().worldManager.step3_ProcessNodesAsync();
+
+                // Animasi bar 0.6 hingga 0.8
+                float scanProgress = targetScreen.getGameplayManager().getContext().worldManager.getAsyncProgress();
+                progress = 0.6f + (scanProgress * 0.2f);
+
+                if (isScanDone) {
+                    currentState = LoadState.INIT_ENTITIES;
+                }
                 break;
 
             case INIT_ENTITIES:
-                Gdx.app.log("LOADER", "[4/6] Menyebarkan Musuh & Karakter...");
+                beginStep("Init Entities (Musuh & Player)");
+                targetScreen.initCamera();
                 targetScreen.initEntities();
+                endStep("Init Entities (Musuh & Player)");
+
                 progress = 0.9f;
                 currentState = LoadState.INIT_UI;
                 break;
 
             case INIT_UI:
-                Gdx.app.log("LOADER", "[5/6] Membangun HUD & Virtual Joystick...");
+                beginStep("Init UI & HUD");
                 targetScreen.initUI();
+                endStep("Init UI & HUD");
+
                 progress = 1.0f;
                 currentState = LoadState.DONE;
+                long totalTime = System.currentTimeMillis() - globalStartTime;
+                Gdx.app.log("PROFILE_LOADER", "TOTAL WAKTU LOADING SELESAI: " + totalTime + " ms!");
                 break;
 
             case DONE:
-                Gdx.app.log("LOADER", "[6/6] Gameplay Siap!");
                 break;
         }
     }
