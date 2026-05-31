@@ -35,7 +35,10 @@ public class DesktopInputController extends BaseInputController {
         action.crouchHeld = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT);
 
         action.jumpPressed = Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
-        action.attackPressed = Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT);
+
+        // FIX TAHAP 2: Ubah tombol serang ke Klik KIRI (Intuisi Game PC)
+        action.attackPressed = Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
+
         action.kickPressed = Gdx.input.isKeyJustPressed(Input.Keys.R);
         action.throwPressed = Gdx.input.isKeyJustPressed(Input.Keys.E);
         action.healPressed = Gdx.input.isKeyJustPressed(Input.Keys.H);
@@ -48,7 +51,8 @@ public class DesktopInputController extends BaseInputController {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if (button == Input.Buttons.LEFT) {
+        // FIX TAHAP 2: Geser kamera pakai Klik KANAN
+        if (button == Input.Buttons.RIGHT) {
             isDragging = true;
             lastDragX = screenX;
             lastDragY = screenY;
@@ -59,7 +63,7 @@ public class DesktopInputController extends BaseInputController {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if (button == Input.Buttons.LEFT) {
+        if (button == Input.Buttons.RIGHT) {
             isDragging = false;
             return true;
         }
@@ -80,7 +84,7 @@ public class DesktopInputController extends BaseInputController {
 
     @Override
     public boolean scrolled(float amountX, float amountY) {
-        camera.addZoom(amountY * CAM_ZOOM_SPEED); // FIX: Panggil addZoom()
+        camera.addZoom(amountY * CAM_ZOOM_SPEED);
         return true;
     }
 }

@@ -10,6 +10,7 @@ import com.bismillahjuara.game.core.RenderPipeline;
 import com.bismillahjuara.game.core.SceneRenderer;
 import com.bismillahjuara.game.core.UpdatePipeline;
 import com.bismillahjuara.game.entity.Player;
+import com.bismillahjuara.game.entity.RelicPusaka;
 import com.bismillahjuara.game.entity.SukmaGowong;
 import com.bismillahjuara.game.input.GameInputHandler;
 import com.bismillahjuara.game.assets.GameAssets;
@@ -22,6 +23,12 @@ public class GameplayManager {
     private UpdatePipeline updatePipeline;
     private RenderPipeline renderPipeline;
 
+    // --- TAMBAHAN STORY CALLBACKS ---
+    public Runnable onAct1Cinematic;
+    public Runnable onAct2Cinematic;
+    public Runnable onEnding1Cinematic;
+    public Runnable onEnding2Cinematic;
+
     public GameplayManager() {
         context = new GameContext();
     }
@@ -30,11 +37,9 @@ public class GameplayManager {
     // BARU: FUNGSI KHUSUS UNTUK ASYNC LOADER
     // =========================================================================
     public void buildWorldCore() {
-        // FIX AAA: Semua inisialisasi krusial ditaruh di sini agar dijamin 1000% TIDAK NULL
-        // saat AsyncLoader memanggil tahap INIT_ENTITIES.
         context.sceneRenderer = new SceneRenderer();
         context.worldManager = new WorldManager(context);
-        context.entityManager = new EntityManager(context); // <--- KUNCI FIX ANTI CRASH!
+        context.entityManager = new EntityManager(context);
 
         renderPipeline = new RenderPipeline(context, context.sceneRenderer);
         updatePipeline = new UpdatePipeline(context);
@@ -52,7 +57,7 @@ public class GameplayManager {
         SceneAsset playerAsset = GameAssets.getInstance().manager.get(GameAssets.PLAYER_GLB, SceneAsset.class);
         SceneAsset enemyAsset = GameAssets.getInstance().manager.get(GameAssets.ENEMY_GLB, SceneAsset.class);
 
-        // 2. SPAWN PLAYER (Kirimkan Asset Matang ke Constructor)
+        // 2. SPAWN PLAYER
         context.player = new Player(context, playerAsset);
 
         Vector3 centerSafePos = new Vector3();
@@ -65,7 +70,32 @@ public class GameplayManager {
         context.player.getPosition().set(centerSafePos);
         context.worldManager.playerSpawnPos.set(centerSafePos);
 
-        // 3. SPAWN 10 SUKMA GOWONG (Kirimkan Asset Matang)
+
+        // ====================================================================
+        // SPAWN 3 RELIK PUSAKA (ACT 1)
+        // ====================================================================
+        // FIX: Hardcode 3 agar tidak error karena RELICS_NEEDED tidak ada di GameContext
+        for (int i = 0; i < 3; i++) {
+            Vector3 relicPos = new Vector3();
+            boolean rValid = false;
+            int rRetries = 50;
+
+            while (!rValid && rRetries > 0) {
+                context.worldManager.getRandomSafePosition(relicPos);
+                rValid = true;
+
+                // Jangan terlalu dekat dengan player (biar nyari)
+                if (relicPos.dst(centerSafePos) < 30f) rValid = false;
+                if (rValid && context.worldManager.isColliding(relicPos, 1.0f, 1.0f)) rValid = false;
+
+                rRetries--;
+            }
+            if (rValid) {
+                context.entityManager.addEntity(new RelicPusaka(relicPos, context));
+            }
+        }
+
+        // 3. SPAWN 10 SUKMA GOWONG
         context.worldManager.enemySpawnPositions.clear();
         Array<Vector3> spawnedPositions = new Array<>();
 
@@ -91,7 +121,6 @@ public class GameplayManager {
                 spawnedPositions.add(new Vector3(spawnPos));
                 context.worldManager.enemySpawnPositions.add(new Vector3(spawnPos));
 
-                // Spawn secepat kilat karena aset sudah ada di RAM!
                 SukmaGowong enemy = new SukmaGowong(spawnPos, context, enemyAsset);
                 context.entityManager.addEntity(enemy);
             }
@@ -99,12 +128,23 @@ public class GameplayManager {
         Gdx.app.log("PROFILE_GAMESCREEN", "11 Entitas di-spawn dalam: " + (System.currentTimeMillis() - startTime) + " ms");
     }
 
+    public void spawnButoIjo() {
+        Vector3 spawnPos = new Vector3();
+        context.worldManager.getRandomSafePosition(spawnPos);
+
+        SceneAsset bossAsset = GameAssets.getInstance().manager.get(GameAssets.ENEMY_GLB, SceneAsset.class);
+
+        context.boss = new com.bismillahjuara.game.entity.ButoIjo(spawnPos, context, bossAsset);
+        context.entityManager.addEntity(context.boss);
+    }
+
     public void bindInput(GameInputHandler inputHandler) {
         context.inputHandler = inputHandler;
     }
 
     public void startGameplay() {
-        context.state = GameplayState.PLAYING;
+        context.state = GameplayState.CUTSCENE;
+        if (onAct1Cinematic != null) onAct1Cinematic.run();
     }
 
     public void pauseGame() {
@@ -114,7 +154,8 @@ public class GameplayManager {
     }
 
     public void resumeGame() {
-        if (context.state == GameplayState.PAUSED) {
+        // FIX AAA: Izinkan transisi dari CUTSCENE kembali ke PLAYING juga!
+        if (context.state == GameplayState.PAUSED || context.state == GameplayState.CUTSCENE) {
             context.state = GameplayState.PLAYING;
         }
     }
@@ -125,6 +166,35 @@ public class GameplayManager {
 
     public void update(float delta) {
         if (updatePipeline != null) updatePipeline.update(delta);
+
+        // --- STORY STATE CHECKER ---
+        if (context.state == GameplayState.PLAYING && !context.isEndingTriggered) {
+
+            // CEK TRANSISI ACT 1 -> ACT 2
+            if (context.currentAct == 1 && context.relicsCollected >= 3) {
+                context.currentAct = 2;
+                context.state = GameplayState.CUTSCENE;
+                if (onAct2Cinematic != null) onAct2Cinematic.run();
+            }
+
+            // CEK ENDING ACT 2
+            if (context.currentAct == 2 && context.boss != null) {
+
+                // ENDING 1: Ketangkep! (Jarak < 2 meter)
+                if (!context.boss.isDead() && context.player.getPosition().dst(context.boss.getPosition()) < 2.0f) {
+                    context.isEndingTriggered = true;
+                    context.state = GameplayState.CUTSCENE;
+                    if (onEnding1Cinematic != null) onEnding1Cinematic.run();
+                }
+
+                // ENDING 2: Buto Ijo Mati (10 Hits)
+                if (context.boss.isDead()) {
+                    context.isEndingTriggered = true;
+                    context.state = GameplayState.CUTSCENE;
+                    if (onEnding2Cinematic != null) onEnding2Cinematic.run();
+                }
+            }
+        }
     }
 
     public void render(float delta) {

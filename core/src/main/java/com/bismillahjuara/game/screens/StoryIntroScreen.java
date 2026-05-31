@@ -21,12 +21,11 @@ import com.badlogic.gdx.video.VideoPlayer;
 import com.badlogic.gdx.video.VideoPlayerCreator;
 import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.settings.SettingsManager;
-import com.bismillahjuara.game.transitions.FadeTransition;
 import com.bismillahjuara.game.ui.FontManager;
 
 /**
  * AAA Cinematic Prologue Screen.
- * 100% Video & Audio, no lore text. Fades elegantly.
+ * 100% Video & Audio. Fades elegantly.
  */
 public class StoryIntroScreen extends BaseScreen {
 
@@ -34,7 +33,7 @@ public class StoryIntroScreen extends BaseScreen {
     private static final String AUDIO_PATH = "sound/prolog_voice.ogg";
 
     // Overlay sangat tipis (0.15) agar video tetap mendominasi visual
-    private static final float OVERLAY_ALPHA = 0.10f;
+    private static final float OVERLAY_ALPHA = 0.15f;
 
     // --- VIDEO & AUDIO SYSTEM ---
     private VideoPlayer videoPlayer;
@@ -55,12 +54,13 @@ public class StoryIntroScreen extends BaseScreen {
 
     public StoryIntroScreen() {
         super();
+        // Matikan lagu Main Menu
         AudioManager.getInstance().stopMusic(1.5f);
 
         createTextures();
         prepareVoiceOverAudio();
-        setupCinematicFader(); // Layar masih gelap gulita saat init
-        setupSkipButton();     // Tombol skip disiapkan tersembunyi
+        setupCinematicFader();
+        setupSkipButton();
     }
 
     private void prepareVoiceOverAudio() {
@@ -98,36 +98,36 @@ public class StoryIntroScreen extends BaseScreen {
     private void setupCinematicFader() {
         cinematicFader = new Image(solidBlackTex);
         cinematicFader.setFillParent(true);
-        cinematicFader.setTouchable(Touchable.disabled); // Agar tidak menghalangi klik
-        stage.addActor(cinematicFader); // Ditaruh paling awal, nanti kita tarik ke paling depan (Z-Index)
+        cinematicFader.setTouchable(Touchable.disabled); // Agar tidak menghalangi klik ke skip button
+        stage.addActor(cinematicFader);
     }
 
     private void setupSkipButton() {
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = FontManager.getInstance().getFont();
-        btnStyle.fontColor = new Color(0.8f, 0.8f, 0.8f, 1f); // Putih redup
-        btnStyle.overFontColor = Color.WHITE; // Terang saat di-hover
+        btnStyle.fontColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        btnStyle.overFontColor = Color.WHITE;
 
         final TextButton skipBtn = new TextButton("SKIP", btnStyle);
-        skipBtn.setTransform(true); // Wajib true agar scale animasi berfungsi
+        skipBtn.setTransform(true);
         skipBtn.setOrigin(Align.center);
 
-        // Posisi awal agak ke bawah agar efek slide-up terlihat
         skipBtn.setPosition(1750, 20);
         skipBtn.getColor().a = 0f;
         skipBtn.setTouchable(Touchable.disabled);
 
-        // Muncul setelah 30 DETIK: Fade In + Slide Up
+        // AAA Detail: Tombol Skip hanya muncul setelah 30 detik video berjalan
         skipBtn.addAction(Actions.sequence(
             Actions.delay(30f),
             Actions.parallel(
                 Actions.fadeIn(2f, Interpolation.fade),
                 Actions.moveBy(0, 30f, 2f, Interpolation.circleOut)
             ),
-            Actions.run(() -> skipBtn.setTouchable(Touchable.enabled))
+            Actions.run(new Runnable() {
+                @Override public void run() { skipBtn.setTouchable(Touchable.enabled); }
+            })
         ));
 
-        // Animasi Hover ala AAA
         skipBtn.addListener(new ClickListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -157,12 +157,11 @@ public class StoryIntroScreen extends BaseScreen {
     @Override
     public void show() {
         super.show();
-        // Pastikan fader (layar hitam) ada di tumpukan paling atas layar
         cinematicFader.toFront();
 
         initVideoBackgroundIfNeeded();
 
-        // 1.5 Detik "Fade from Black" perlahan membuka pemandangan video
+        // AAA Transisi: Fade from Black perlahan membuka pemandangan video (1.5 detik)
         cinematicFader.addAction(Actions.sequence(
             Actions.fadeOut(1.5f),
             Actions.visible(false)
@@ -191,15 +190,13 @@ public class StoryIntroScreen extends BaseScreen {
                 return;
             }
 
-            // SETTING AAA: Jangan looping, volume 0 (karena suara dipisah).
             videoPlayer.setLooping(false);
-            videoPlayer.setVolume(0f);
+            videoPlayer.setVolume(0f); // Volume asli mati karena kita pakai voice_over.ogg
 
-            // LISTENER PENYELESAIAN VIDEO (Saat 57 detik selesai)
+            // Auto lanjut ke gameplay jika video berdurasi 57 detik selesai
             videoPlayer.setOnCompletionListener(new VideoPlayer.CompletionListener() {
                 @Override
                 public void onCompletionListener(FileHandle file) {
-                    // Karena listener berjalan di thread terpisah, kita wajib oper ke Main Thread
                     Gdx.app.postRunnable(new Runnable() {
                         @Override
                         public void run() {
@@ -225,7 +222,7 @@ public class StoryIntroScreen extends BaseScreen {
     }
 
     private void triggerFailsafeLoading() {
-        // Jika file WEBM rusak/hilang, tunggu 3 detik lalu skip ke loading
+        // Jika file WEBM rusak/hilang, tunggu 3 detik lalu masuk loading
         stage.addAction(Actions.sequence(
             Actions.delay(3f),
             Actions.run(new Runnable() {
@@ -238,9 +235,10 @@ public class StoryIntroScreen extends BaseScreen {
         if (isSkipping) return;
         isSkipping = true;
 
-        // 1. Mulai turunkan volume suara perlahan (Fade Out)
-        isAudioFading = true;
-        if (storyVoiceOver != null) {
+        // 1. Mulai turunkan volume suara perlahan (Fade Out Audio)
+        if (storyVoiceOver != null && storyVoiceOver.isPlaying()) {
+            isAudioFading = true;
+            audioFadeTimer = 0.5f;
             initialAudioVolume = storyVoiceOver.getVolume();
         }
 
@@ -248,11 +246,12 @@ public class StoryIntroScreen extends BaseScreen {
         cinematicFader.setVisible(true);
         cinematicFader.toFront();
         cinematicFader.addAction(Actions.sequence(
-            Actions.fadeIn(1.0f), // Gelap dalam 1 detik
+            Actions.fadeIn(1.0f),
             Actions.run(new Runnable() {
                 @Override
                 public void run() {
-                    // 3. Masuk ke loading screen tanpa transisi engine (karena layarnya sudah hitam legam)
+                    // Pastikan audio mati total sebelum pindah layar
+                    if (storyVoiceOver != null) storyVoiceOver.stop();
                     ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
                 }
             })
@@ -264,13 +263,13 @@ public class StoryIntroScreen extends BaseScreen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-        // --- MANAJEMEN AUDIO FADE OUT (0.5 Detik) ---
-        if (isAudioFading && storyVoiceOver != null && storyVoiceOver.isPlaying()) {
+        // --- MANAJEMEN AUDIO FADE OUT ---
+        if (isAudioFading && storyVoiceOver != null) {
             audioFadeTimer -= delta;
             if (audioFadeTimer <= 0) {
                 storyVoiceOver.stop();
+                isAudioFading = false;
             } else {
-                // Lerp volume dari nilai awal menuju 0
                 float newVol = initialAudioVolume * (audioFadeTimer / 0.5f);
                 storyVoiceOver.setVolume(newVol);
             }
@@ -335,7 +334,6 @@ public class StoryIntroScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        // Jangan dispose customFont di sini karena FontManager yang mengurusnya!
 
         if (videoPlayer != null) {
             videoPlayer.dispose();

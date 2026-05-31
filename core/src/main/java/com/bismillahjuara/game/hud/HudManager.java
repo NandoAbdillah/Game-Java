@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.input.GameInputHandler;
 
 /**
@@ -15,14 +16,14 @@ public class HudManager {
 
     private MobileControlsUI mobileControls;
     private DebugUI debugUI;
-    private PauseMenuUI pauseMenuUI; // Tambahan
+    private PauseMenuUI pauseMenuUI;
 
     public HudManager() {
         stage = new Stage(new ScreenViewport());
         assets = new HudAssets();
 
         // 1. Buat Debug UI
-        debugUI = new DebugUI(assets);
+        debugUI = new DebugUI();
         stage.addActor(debugUI.getRootTable());
 
         // 2. Buat Mobile Controls jika di HP
@@ -36,8 +37,12 @@ public class HudManager {
         stage.addActor(pauseMenuUI.getRootTable());
     }
 
-    public void updateAndRender(Vector3 playerPos, float camYaw) {
-        debugUI.update(playerPos, camYaw, GameInputHandler.IS_MOBILE);
+    // FIX 3: Mengirim GameContext agar DebugUI bisa membaca jumlah pusaka!
+    public void updateAndRender(GameContext context) {
+        // Buka kunci update DebugUI!
+        if (context != null) {
+            debugUI.update(Gdx.graphics.getDeltaTime(), context);
+        }
 
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
@@ -58,16 +63,18 @@ public class HudManager {
         return pauseMenuUI;
     }
 
+    public DebugUI getDebugUI() {
+        return debugUI;
+    }
+
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
     }
 
-    /** Digunakan oleh InputMultiplexer */
     public Stage getStage() {
         return stage;
     }
 
-    /** Digunakan oleh MobileInputController untuk membaca pergerakan Joystick */
     public MobileControlsUI getMobileControls() {
         return mobileControls;
     }

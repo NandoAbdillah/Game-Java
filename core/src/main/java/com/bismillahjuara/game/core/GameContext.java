@@ -24,4 +24,34 @@ public class GameContext {
     // --- AAA AUDIO ENGINE INJECTION ---
     public AudioManager audio = AudioManager.getInstance();
     public final float fixedTimeStep = 1f / 60f;
+
+    // =======================================================
+    // --- STORY & QUEST SYSTEM ---
+    // =======================================================
+    public int currentAct = 1;
+    public int relicsCollected = 0;
+    public final int RELICS_NEEDED = 3;
+
+    // --- TAMBAHAN PHASE 3: STORY FLOW ---
+    public int butoHits = 0;
+    public com.bismillahjuara.game.entity.ButoIjo boss = null;
+    public boolean isEndingTriggered = false;
+
+    /**
+     * Dipanggil oleh RelicPusaka.java saat ditabrak player
+     */
+    public void collectRelic() {
+        relicsCollected++;
+        audio.playSFX(com.bismillahjuara.game.audio.AudioSFX.UI_CONFIRM); // Suara pungut
+
+        // Cek Pindah Act
+        if (relicsCollected >= RELICS_NEEDED && currentAct == 1) {
+            triggerAct2();
+        }
+    }
+
+    private void triggerAct2() {
+        currentAct = 2;
+        // TODO: Mainkan lagu boss, spawn Buto Ijo, tampilkan teks "Act 2"
+    }
 }
