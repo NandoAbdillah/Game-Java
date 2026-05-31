@@ -34,7 +34,7 @@ public class StoryIntroScreen extends BaseScreen {
     private static final String AUDIO_PATH = "sound/prolog_voice.ogg";
 
     // Overlay sangat tipis (0.15) agar video tetap mendominasi visual
-    private static final float OVERLAY_ALPHA = 0.15f;
+    private static final float OVERLAY_ALPHA = 0.10f;
 
     // --- VIDEO & AUDIO SYSTEM ---
     private VideoPlayer videoPlayer;
