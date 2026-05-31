@@ -23,8 +23,8 @@ public class Main extends Game {
         ScreenManager.getInstance().initialize(this);
 
         // 3. Masuk Intro
-//        ScreenManager.getInstance().setScreen(new SplashScreen(), null);
-        ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
+        ScreenManager.getInstance().setScreen(new SplashScreen(), null);
+//        ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
 
 //        ScreenManager.getInstance().setScreen(new StoryIntroScreen(), new FadeTransition(1.0f));
     }

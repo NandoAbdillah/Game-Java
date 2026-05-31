@@ -1,21 +1,20 @@
 package com.bismillahjuara.game.screens;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.utils.Align;
 import com.bismillahjuara.game.transitions.FadeTransition;
 
 /**
  * Layar pertama yang dilihat pemain.
- * Fokus pada First Impression, rendering Logo, dan pengantar cinematic.
+ * Fokus pada First Impression, rendering Logo PNG, dan pengantar cinematic.
  */
 public class SplashScreen extends BaseScreen {
 
-    private Label studioLogoPlaceholder;
-    private BitmapFont font; // TODO: Ganti dengan FreeTypeFontGenerator (Zelda-style) nanti
+    private Texture logoTexture;
+    private Image studioLogo;
 
     public SplashScreen() {
         super();
@@ -27,19 +26,22 @@ public class SplashScreen extends BaseScreen {
         Table rootTable = new Table();
         rootTable.setFillParent(true);
 
-        // --- SYSTEM PLACEHOLDER ---
-        // TODO: Ganti Label ini dengan Image(Texture) logo studio asli nanti
-        font = new BitmapFont();
-        font.getData().setScale(5f); // Kasih skala besar agar terlihat AAA
+        try {
+            // Load file STUDIO.png dari folder assets
+            logoTexture = new Texture(Gdx.files.internal("STUDIO.png"));
+            // Set filter Linear agar logo tampil sangat tajam dan mulus (AAA Polish)
+            logoTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
-        Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
-        studioLogoPlaceholder = new Label("Nopal\nStudio", style);
-        studioLogoPlaceholder.setAlignment(Align.center);
+            studioLogo = new Image(logoTexture);
+        } catch (Exception e) {
+            Gdx.app.error("SPLASH", "File STUDIO.png tidak ditemukan di folder assets!", e);
+            studioLogo = new Image(); // Fallback kosong agar tidak crash
+        }
 
         // Set alpha awal ke 0 (menghilang)
-        studioLogoPlaceholder.getColor().a = 0f;
+        studioLogo.getColor().a = 0f;
 
-        rootTable.add(studioLogoPlaceholder).expand().center();
+        rootTable.add(studioLogo).expand().center();
         stage.addActor(rootTable);
     }
 
@@ -47,9 +49,9 @@ public class SplashScreen extends BaseScreen {
         // Rahasia Animator UI AAA: Gunakan Sequence Action!
         // Alur: Pudar Masuk -> Tahan 2 detik -> Pudar Keluar -> Ganti Layar
 
-        studioLogoPlaceholder.addAction(Actions.sequence(
+        studioLogo.addAction(Actions.sequence(
             Actions.fadeIn(1.5f, com.badlogic.gdx.math.Interpolation.fade), // Fade in mulus 1.5 detik
-            Actions.delay(2.0f),                                            // Tahan layar (Pemain membaca logo)
+            Actions.delay(2.0f),                                            // Tahan layar 2 detik
             Actions.fadeOut(1.0f, com.badlogic.gdx.math.Interpolation.fade), // Fade out 1 detik
             Actions.run(new Runnable() {
                 @Override
@@ -69,6 +71,9 @@ public class SplashScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        font.dispose(); // Ingat selalu buang memori aset lokal
+        // Ingat selalu buang memori aset lokal agar tidak bocor (Memory Leak)
+        if (logoTexture != null) {
+            logoTexture.dispose();
+        }
     }
 }
