@@ -1,10 +1,14 @@
-package com.bismillahjuara.game.core;
+package com.bismillahjuara.game.managers;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
+import com.bismillahjuara.game.core.GameContext;
+import com.bismillahjuara.game.core.GameplayState;
+import com.bismillahjuara.game.core.RenderPipeline;
+import com.bismillahjuara.game.core.SceneRenderer;
+import com.bismillahjuara.game.core.UpdatePipeline;
 import com.bismillahjuara.game.entity.Player;
 import com.bismillahjuara.game.entity.SukmaGowong;
 import com.bismillahjuara.game.input.GameInputHandler;
@@ -20,20 +24,28 @@ public class GameplayManager {
 
     public GameplayManager() {
         context = new GameContext();
-        context.sceneRenderer = new SceneRenderer(); // Instansiasi lebih dulu
-
-        context.worldManager = new WorldManager(context);
-        context.entityManager = new EntityManager(context);
-
-        updatePipeline = new UpdatePipeline(context);
-        renderPipeline = new RenderPipeline(context, context.sceneRenderer);
     }
 
-    public void buildWorld() {
-        context.worldManager.initialize(context.sceneRenderer);
+    // =========================================================================
+    // BARU: FUNGSI KHUSUS UNTUK ASYNC LOADER
+    // =========================================================================
+    public void buildWorldCore() {
+        // FIX AAA: Semua inisialisasi krusial ditaruh di sini agar dijamin 1000% TIDAK NULL
+        // saat AsyncLoader memanggil tahap INIT_ENTITIES.
+        context.sceneRenderer = new SceneRenderer();
+        context.worldManager = new WorldManager(context);
+        context.entityManager = new EntityManager(context); // <--- KUNCI FIX ANTI CRASH!
+
+        renderPipeline = new RenderPipeline(context, context.sceneRenderer);
+        updatePipeline = new UpdatePipeline(context);
     }
 
     public void buildEntities(AdvancedCameraSystem camera) {
+        // FAILSAFE SUPER AMAN: Jika masih null (karena alasan apapun), paksa buat baru!
+        if (context.entityManager == null) {
+            context.entityManager = new EntityManager(context);
+        }
+
         context.camera = camera;
 
         // ====================================================================
@@ -42,22 +54,16 @@ public class GameplayManager {
         context.player = new Player(context);
         Vector3 centerSafePos = new Vector3();
 
-        // Minta titik tengah yang benar-benar aman dari WorldManager!
         context.worldManager.getSafeCenterPosition(centerSafePos);
 
-        // Failsafe: Pastikan titik tengah absolut tidak bertabrakan dengan batu/pohon
         int playerRetries = 10;
         while (context.worldManager.isColliding(centerSafePos, 0.5f, 2.0f) && playerRetries > 0) {
-            centerSafePos.add(1.5f, 0, 1.5f); // Geser perlahan jika nyangkut
+            centerSafePos.add(1.5f, 0, 1.5f);
             playerRetries--;
         }
 
         context.player.getPosition().set(centerSafePos);
         context.worldManager.playerSpawnPos.set(centerSafePos);
-
-        boolean isPlayerValid = !context.worldManager.isColliding(centerSafePos, 0.5f, 2.0f);
-        Gdx.app.log("SPAWN_VALIDATION", "Player Spawn Valid = " + isPlayerValid + " | Pos: " + centerSafePos);
-
 
         // ====================================================================
         // 2. SPAWN 10 SUKMA GOWONG DENGAN VALIDASI KETAT
@@ -68,19 +74,14 @@ public class GameplayManager {
         for (int i = 0; i < 10; i++) {
             Vector3 spawnPos = new Vector3();
             boolean valid = false;
-            int retries = 50; // Maksimal cari 50 titik untuk 1 musuh agar tidak Infinite Loop
+            int retries = 50;
 
             while (!valid && retries > 0) {
-                // Minta titik acak yang DI DALAM batas aman map!
                 context.worldManager.getRandomSafePosition(spawnPos);
                 valid = true;
 
-                // Syarat 1: Minimal 20 meter dari Player
-                if (spawnPos.dst(centerSafePos) < 20f) {
-                    valid = false;
-                }
+                if (spawnPos.dst(centerSafePos) < 20f) valid = false;
 
-                // Syarat 2: Minimal 5 meter dari musuh lain
                 if (valid) {
                     for (Vector3 otherPos : spawnedPositions) {
                         if (spawnPos.dst(otherPos) < 5f) {
@@ -90,33 +91,20 @@ public class GameplayManager {
                     }
                 }
 
-                // Syarat 3: Tidak boleh menabrak pohon/obstacle (IsColliding)
-                if (valid) {
-                    if (context.worldManager.isColliding(spawnPos, 0.5f, 2.0f)) {
-                        valid = false;
-                    }
+                if (valid && context.worldManager.isColliding(spawnPos, 0.5f, 2.0f)) {
+                    valid = false;
                 }
 
                 retries--;
             }
 
             if (valid) {
-                float distToBorder = Math.min(
-                    Math.abs(spawnPos.x - (context.worldManager.mapBounds.max.x - context.worldManager.safePlayMargin)),
-                    Math.abs(spawnPos.z - (context.worldManager.mapBounds.max.z - context.worldManager.safePlayMargin))
-                );
-
-                Gdx.app.log("SPAWN_VALIDATION", "SukmaGowong [" + i + "] Spawn Valid = TRUE | DistToPlayer: "
-                    + String.format("%.1f", spawnPos.dst(centerSafePos)) + "m | DistToBorder: ~"
-                    + String.format("%.1f", distToBorder) + "m");
-
                 spawnedPositions.add(new Vector3(spawnPos));
                 context.worldManager.enemySpawnPositions.add(new Vector3(spawnPos));
 
                 SukmaGowong enemy = new SukmaGowong(spawnPos, context);
+                // INI YANG TADI BIKIN CRASH! Sekarang dijamin sukses 100%
                 context.entityManager.addEntity(enemy);
-            } else {
-                Gdx.app.log("SPAWN_VALIDATION", "SukmaGowong [" + i + "] Spawn Valid = FALSE (Gagal cari ruang setelah 50x coba)");
             }
         }
     }
@@ -129,9 +117,6 @@ public class GameplayManager {
         context.state = GameplayState.PLAYING;
     }
 
-    // ==========================================================
-    // --- PAUSE API (JEMBATAN UNTUK GAME SCREEN) ---
-    // ==========================================================
     public void pauseGame() {
         if (context.state == GameplayState.PLAYING) {
             context.state = GameplayState.PAUSED;
@@ -147,20 +132,19 @@ public class GameplayManager {
     public GameContext getContext() {
         return context;
     }
-    // ==========================================================
 
     public void update(float delta) {
-        updatePipeline.update(delta);
+        if (updatePipeline != null) updatePipeline.update(delta);
     }
 
     public void render(float delta) {
-        renderPipeline.render(delta);
+        if (renderPipeline != null) renderPipeline.render(delta);
     }
 
     public void dispose() {
-        context.sceneRenderer.dispose();
-        context.worldManager.dispose();
-        context.entityManager.dispose();
+        if (context.sceneRenderer != null) context.sceneRenderer.dispose();
+        if (context.worldManager != null) context.worldManager.dispose();
+        if (context.entityManager != null) context.entityManager.dispose();
         if (context.player != null) context.player.dispose();
     }
 }
