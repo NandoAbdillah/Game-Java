@@ -12,8 +12,8 @@ import com.bismillahjuara.game.core.UpdatePipeline;
 import com.bismillahjuara.game.entity.Player;
 import com.bismillahjuara.game.entity.SukmaGowong;
 import com.bismillahjuara.game.input.GameInputHandler;
-import com.bismillahjuara.game.managers.EntityManager;
-import com.bismillahjuara.game.managers.WorldManager;
+import com.bismillahjuara.game.assets.GameAssets;
+import net.mgsx.gltf.scene3d.scene.SceneAsset;
 
 public class GameplayManager {
 
@@ -41,33 +41,31 @@ public class GameplayManager {
     }
 
     public void buildEntities(AdvancedCameraSystem camera) {
-        // FAILSAFE SUPER AMAN: Jika masih null (karena alasan apapun), paksa buat baru!
         if (context.entityManager == null) {
             context.entityManager = new EntityManager(context);
         }
-
         context.camera = camera;
 
-        // ====================================================================
-        // 1. SPAWN PLAYER DI PUSAT SAFE AREA (ANTI-NYANGKUT)
-        // ====================================================================
-        context.player = new Player(context);
+        long startTime = System.currentTimeMillis();
+
+        // 1. AMBIL ASET YANG SUDAH DI-LOAD KE RAM
+        SceneAsset playerAsset = GameAssets.getInstance().manager.get(GameAssets.PLAYER_GLB, SceneAsset.class);
+        SceneAsset enemyAsset = GameAssets.getInstance().manager.get(GameAssets.ENEMY_GLB, SceneAsset.class);
+
+        // 2. SPAWN PLAYER (Kirimkan Asset Matang ke Constructor)
+        context.player = new Player(context, playerAsset);
+
         Vector3 centerSafePos = new Vector3();
-
         context.worldManager.getSafeCenterPosition(centerSafePos);
-
         int playerRetries = 10;
         while (context.worldManager.isColliding(centerSafePos, 0.5f, 2.0f) && playerRetries > 0) {
             centerSafePos.add(1.5f, 0, 1.5f);
             playerRetries--;
         }
-
         context.player.getPosition().set(centerSafePos);
         context.worldManager.playerSpawnPos.set(centerSafePos);
 
-        // ====================================================================
-        // 2. SPAWN 10 SUKMA GOWONG DENGAN VALIDASI KETAT
-        // ====================================================================
+        // 3. SPAWN 10 SUKMA GOWONG (Kirimkan Asset Matang)
         context.worldManager.enemySpawnPositions.clear();
         Array<Vector3> spawnedPositions = new Array<>();
 
@@ -79,22 +77,13 @@ public class GameplayManager {
             while (!valid && retries > 0) {
                 context.worldManager.getRandomSafePosition(spawnPos);
                 valid = true;
-
                 if (spawnPos.dst(centerSafePos) < 20f) valid = false;
-
                 if (valid) {
                     for (Vector3 otherPos : spawnedPositions) {
-                        if (spawnPos.dst(otherPos) < 5f) {
-                            valid = false;
-                            break;
-                        }
+                        if (spawnPos.dst(otherPos) < 5f) { valid = false; break; }
                     }
                 }
-
-                if (valid && context.worldManager.isColliding(spawnPos, 0.5f, 2.0f)) {
-                    valid = false;
-                }
-
+                if (valid && context.worldManager.isColliding(spawnPos, 0.5f, 2.0f)) valid = false;
                 retries--;
             }
 
@@ -102,11 +91,12 @@ public class GameplayManager {
                 spawnedPositions.add(new Vector3(spawnPos));
                 context.worldManager.enemySpawnPositions.add(new Vector3(spawnPos));
 
-                SukmaGowong enemy = new SukmaGowong(spawnPos, context);
-                // INI YANG TADI BIKIN CRASH! Sekarang dijamin sukses 100%
+                // Spawn secepat kilat karena aset sudah ada di RAM!
+                SukmaGowong enemy = new SukmaGowong(spawnPos, context, enemyAsset);
                 context.entityManager.addEntity(enemy);
             }
         }
+        Gdx.app.log("PROFILE_GAMESCREEN", "11 Entitas di-spawn dalam: " + (System.currentTimeMillis() - startTime) + " ms");
     }
 
     public void bindInput(GameInputHandler inputHandler) {
