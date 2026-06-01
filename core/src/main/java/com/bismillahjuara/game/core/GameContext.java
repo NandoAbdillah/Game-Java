@@ -8,7 +8,7 @@ import com.bismillahjuara.game.managers.WorldManager;
 import com.bismillahjuara.game.entity.Player;
 
 
-public class GameContext {]
+public class GameContext {
     public AdvancedCameraSystem camera;
     public GameInputHandler inputHandler;
     public Player player;
