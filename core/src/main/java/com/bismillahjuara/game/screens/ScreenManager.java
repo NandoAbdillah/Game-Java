@@ -11,7 +11,7 @@ public class ScreenManager {
     private Game game;
     private SpriteBatch batch;
 
-    // State Transisi
+    // transisi
     private Screen currentScreen;
     private Screen nextScreen;
     private com.bismillahjuara.game.transitions.ScreenTransition transition;
