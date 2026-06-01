@@ -28,30 +28,23 @@ public class StoryIntroScreen extends BaseScreen {
     private static final String VIDEO_PATH = "video/prolog.webm";
     private static final String AUDIO_PATH = "sound/prolog_voice.ogg";
 
-    private static final float OVERLAY_ALPHA = 0.15f;
-
-    // --- VIDEO & AUDIO SYSTEM ---
     private VideoPlayer videoPlayer;
     private Music storyVoiceOver;
-    private Texture darkOverlayTex;
     private Texture solidBlackTex;
 
-    private Image cinematicFader; // Layar hitam untuk efek fade in & fade out
+    private Image cinematicFader;
 
     private boolean videoInitialized = false;
     private boolean videoAvailable = false;
     private boolean isSkipping = false;
 
-    // --- AUDIO FADE SYSTEM ---
     private boolean isAudioFading = false;
-    private float audioFadeTimer = 0.5f; // Durasi fade out audio
+    private float audioFadeTimer = 0.5f;
     private float initialAudioVolume = 0f;
 
     public StoryIntroScreen() {
         super();
-        // Matikan lagu Main Menu
         AudioManager.getInstance().stopMusic(1.5f);
-
         createTextures();
         prepareVoiceOverAudio();
         setupCinematicFader();
@@ -77,12 +70,6 @@ public class StoryIntroScreen extends BaseScreen {
     }
 
     private void createTextures() {
-        Pixmap pixOver = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixOver.setColor(0f, 0f, 0f, OVERLAY_ALPHA);
-        pixOver.fill();
-        darkOverlayTex = new Texture(pixOver);
-        pixOver.dispose();
-
         Pixmap pixBlack = new Pixmap(1, 1, Pixmap.Format.RGB888);
         pixBlack.setColor(Color.BLACK);
         pixBlack.fill();
@@ -94,6 +81,7 @@ public class StoryIntroScreen extends BaseScreen {
         cinematicFader = new Image(solidBlackTex);
         cinematicFader.setFillParent(true);
         cinematicFader.setTouchable(Touchable.disabled);
+        cinematicFader.setColor(Color.WHITE);
         stage.addActor(cinematicFader);
     }
 
@@ -106,7 +94,6 @@ public class StoryIntroScreen extends BaseScreen {
         final TextButton skipBtn = new TextButton("SKIP", btnStyle);
         skipBtn.setTransform(true);
         skipBtn.setOrigin(Align.center);
-
         skipBtn.setPosition(1750, 20);
         skipBtn.getColor().a = 0f;
         skipBtn.setTouchable(Touchable.disabled);
@@ -117,9 +104,7 @@ public class StoryIntroScreen extends BaseScreen {
                 Actions.fadeIn(2f, Interpolation.fade),
                 Actions.moveBy(0, 30f, 2f, Interpolation.circleOut)
             ),
-            Actions.run(new Runnable() {
-                @Override public void run() { skipBtn.setTouchable(Touchable.enabled); }
-            })
+            Actions.run(() -> skipBtn.setTouchable(Touchable.enabled))
         ));
 
         skipBtn.addListener(new ClickListener() {
@@ -152,12 +137,14 @@ public class StoryIntroScreen extends BaseScreen {
     public void show() {
         super.show();
         cinematicFader.toFront();
+        cinematicFader.setVisible(true);
+        cinematicFader.setColor(1f, 1f, 1f, 1f);
 
         initVideoBackgroundIfNeeded();
 
         cinematicFader.addAction(Actions.sequence(
             Actions.fadeOut(1.5f),
-            Actions.visible(false)
+            Actions.run(() -> cinematicFader.setVisible(false))
         ));
     }
 
@@ -186,17 +173,9 @@ public class StoryIntroScreen extends BaseScreen {
             videoPlayer.setLooping(false);
             videoPlayer.setVolume(0f);
 
-            videoPlayer.setOnCompletionListener(new VideoPlayer.CompletionListener() {
-                @Override
-                public void onCompletionListener(FileHandle file) {
-                    Gdx.app.postRunnable(new Runnable() {
-                        @Override
-                        public void run() {
-                            proceedToLoading();
-                        }
-                    });
-                }
-            });
+            videoPlayer.setOnCompletionListener(file ->
+                Gdx.app.postRunnable(this::proceedToLoading)
+            );
 
             videoPlayer.play();
 
@@ -216,9 +195,7 @@ public class StoryIntroScreen extends BaseScreen {
     private void triggerFailsafeLoading() {
         stage.addAction(Actions.sequence(
             Actions.delay(3f),
-            Actions.run(new Runnable() {
-                @Override public void run() { proceedToLoading(); }
-            })
+            Actions.run(this::proceedToLoading)
         ));
     }
 
@@ -234,14 +211,12 @@ public class StoryIntroScreen extends BaseScreen {
 
         cinematicFader.setVisible(true);
         cinematicFader.toFront();
+        cinematicFader.setColor(1f, 1f, 1f, 0f);
         cinematicFader.addAction(Actions.sequence(
             Actions.fadeIn(1.0f),
-            Actions.run(new Runnable() {
-                @Override
-                public void run() {
-                    if (storyVoiceOver != null) storyVoiceOver.stop();
-                    ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
-                }
+            Actions.run(() -> {
+                if (storyVoiceOver != null) storyVoiceOver.stop();
+                ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
             })
         ));
     }
@@ -251,10 +226,9 @@ public class StoryIntroScreen extends BaseScreen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-        // --- MANAJEMEN AUDIO FADE OUT ---
         if (isAudioFading && storyVoiceOver != null) {
             audioFadeTimer -= delta;
-            if (audioFadeTimer <= 0) {
+            if (audioFadeTimer <= 0f) {
                 storyVoiceOver.stop();
                 isAudioFading = false;
             } else {
@@ -277,8 +251,26 @@ public class StoryIntroScreen extends BaseScreen {
             Texture frame = videoPlayer.getTexture();
 
             if (frame != null) {
+                Color originalBatchColor = new Color(batch.getColor());
+                int originalBlendSrc = -1;
+                int originalBlendDst = -1;
+
+                batch.setColor(Color.WHITE);
+
+                if (batch.isBlendingEnabled()) {
+                    originalBlendSrc = batch.getBlendSrcFunc();
+                    originalBlendDst = batch.getBlendDstFunc();
+                    batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                }
+
                 drawCover(batch, frame, screenW, screenH);
                 drawn = true;
+
+                batch.setColor(originalBatchColor);
+
+                if (batch.isBlendingEnabled() && originalBlendSrc != -1 && originalBlendDst != -1) {
+                    batch.setBlendFunction(originalBlendSrc, originalBlendDst);
+                }
             }
         }
 
@@ -286,25 +278,18 @@ public class StoryIntroScreen extends BaseScreen {
             batch.draw(solidBlackTex, 0, 0, screenW, screenH);
         }
 
-        if (darkOverlayTex != null) {
-            batch.draw(darkOverlayTex, 0, 0, screenW, screenH);
-        }
-
         batch.end();
-
         stage.draw();
     }
 
     private void drawCover(SpriteBatch batch, Texture tex, int screenW, int screenH) {
         float texW = tex.getWidth();
         float texH = tex.getHeight();
-
         float scale = Math.max((float) screenW / texW, (float) screenH / texH);
         float drawW = texW * scale;
         float drawH = texH * scale;
         float x = (screenW - drawW) * 0.5f;
         float y = (screenH - drawH) * 0.5f;
-
         batch.draw(tex, x, y, drawW, drawH);
     }
 
@@ -318,7 +303,6 @@ public class StoryIntroScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-
         if (videoPlayer != null) {
             videoPlayer.dispose();
             videoPlayer = null;
@@ -327,7 +311,9 @@ public class StoryIntroScreen extends BaseScreen {
             storyVoiceOver.dispose();
             storyVoiceOver = null;
         }
-        if (darkOverlayTex != null) darkOverlayTex.dispose();
-        if (solidBlackTex != null) solidBlackTex.dispose();
+        if (solidBlackTex != null) {
+            solidBlackTex.dispose();
+            solidBlackTex = null;
+        }
     }
 }
