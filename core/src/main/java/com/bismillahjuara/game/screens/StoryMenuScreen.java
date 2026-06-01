@@ -23,7 +23,7 @@ import com.bismillahjuara.game.ui.FontManager;
 
 public class StoryMenuScreen extends BaseScreen {
 
-    // VARIABEL GLOBAL UNTUK DEBUGGING ACT
+    // dbungging act
     public static int DEBUG_START_ACT = 1;
 
     private Texture bgImageTex;
@@ -37,7 +37,7 @@ public class StoryMenuScreen extends BaseScreen {
 
     private int currentSlide = 0;
 
-    // --- STRUKTUR DATA LORE SLIDES ---
+    // data slides
     private static class StorySlide {
         String title;
         String text;
@@ -151,13 +151,13 @@ public class StoryMenuScreen extends BaseScreen {
             }
         });
 
-        // Menyusun tombol navigasi
+        // tombol navigasi
         navTable.add(btnPrev).width(200).padRight(20);
         navTable.add(btnPlay).width(300).padRight(20);
         navTable.add(btnNext).width(200).row();
         navTable.add(btnReturn).colspan(3).padTop(50).center();
 
-        // --- MAIN LAYOUT ---
+        // layout utama
         Table rootTable = new Table();
         rootTable.setFillParent(true);
         rootTable.add(contentTable).expand().center().row();
@@ -172,7 +172,7 @@ public class StoryMenuScreen extends BaseScreen {
 
         currentSlide = nextSlide;
 
-        // --- EFEK BURN TRANSITION AAA ---
+        // burn transition
         contentTable.clearActions();
         contentTable.addAction(Actions.sequence(
             Actions.parallel(
@@ -197,7 +197,7 @@ public class StoryMenuScreen extends BaseScreen {
         titleLabel.setText(slide.title);
         descLabel.setText(slide.text);
 
-        // Atur visibilitas tombol
+        // visibilitas tombol
         btnPrev.setVisible(currentSlide > 0);
         btnNext.setVisible(currentSlide < slides.length - 1);
         btnPlay.setVisible(slide.canPlay);
