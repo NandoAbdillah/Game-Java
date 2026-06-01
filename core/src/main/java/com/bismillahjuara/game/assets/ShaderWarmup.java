@@ -8,19 +8,20 @@ import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
 /**
- * Memaksa OpenGL untuk meng-compile Shader yang berat selama layar Loading masih menyala. Mencegah "First-Frame Lag Spike"
+ * Memaksa OpenGL untuk mencompile shader yang berat selama layar Loading masih menyala. Mencegah FirstFrame Lag Spike
  */
 public class ShaderWarmup {
 
     private static SceneManager warmupSceneManager;
 
-    /** Dipanggil tepat saat loading mencapai 100%, sebelum masuk ke Main Menu */
+    /** Dipanggil tepat saat loading mencapai 100%, sebelum masuk ke , main menu */
     public static void executeWarmup() {
+
+
         Gdx.app.log("WARMUP", "Memulai kompilasi Shader 3D PBR/Default...");
 
         long startTime = System.currentTimeMillis();
 
-        // menginisialisasi SceneManager di sini akan memaksa LibGDX membuat dan mengkompilasi Shader Program
         DefaultShader.Config config = new DefaultShader.Config();
         config.numBones = 80;
         DepthShader.Config depthConfig = new DepthShader.Config();

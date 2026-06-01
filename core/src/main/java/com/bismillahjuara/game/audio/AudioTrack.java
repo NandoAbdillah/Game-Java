@@ -1,22 +1,18 @@
 package com.bismillahjuara.game.audio;
 
-/**
- * Enum untuk Audio Streaming (.ogg). Irit RAM.
- * Digunakan untuk Music dan Ambient yang panjang.
- */
 public enum AudioTrack {
-    // --- MUSIC ---
+    // MUSIC
     THEME("sound/theme.ogg"),
     BATTLE_THEME("sound/battle_theme.ogg"),
     BOSS_THEME("sound/environment/hutan.ogg"),
     CREDITS_THEME("sound/credits.ogg"),
     VICTORY_THEME("sound/victory_theme.ogg"),
 
-    // --- AMBIENT ---
+    // AMBIENT
     FOREST_AMBIENT("sound/environment/hutan.ogg"),
 
     HORROR_AMBIENT("sound/ambient_horror.ogg");
-    // Tambahkan sesuai kebutuhan di masa depan
+
 
     public final String path;
     AudioTrack(String path) { this.path = path; }

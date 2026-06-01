@@ -16,17 +16,15 @@ public class GameAssets {
     private static GameAssets instance;
     public AssetManager manager;
 
-    // --- ASSET PATHS ---
+    // ASSET
     public static final String MAP_GLB = "models/maps/Maps.glb";
     public static final String PLAYER_GLB = "models/chars/TimunAnim2.glb";
     public static final String ENEMY_GLB = "models/chars/SukmaGowong.glb";
-
     public static  final String BUTO_GLB = "models/chars/ButoIjo.glb";
 
     public static final String HOME_GLB = "models/maps/Home.glb";
     public static final String TEMPLE_GLB = "models/maps/Temple.glb";
 
-    // --- PUSAKA GLB PATHS ---
     public static final String KERIS_GLB = "models/object/Keris.glb";
     public static final String KUJANG_GLB = "models/object/Kujang.glb";
     public static final String MANDAU_GLB = "models/object/Mandau.glb";

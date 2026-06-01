@@ -7,9 +7,7 @@ import com.bismillahjuara.game.managers.EntityManager;
 import com.bismillahjuara.game.managers.WorldManager;
 import com.bismillahjuara.game.entity.Player;
 
-/**
- Komunikasi Gameplay.
- */
+
 public class GameContext {
     public AdvancedCameraSystem camera;
     public GameInputHandler inputHandler;
@@ -21,13 +19,11 @@ public class GameContext {
 
     public GameplayState state = GameplayState.INITIALIZING;
 
-    // --- AAA AUDIO ENGINE INJECTION ---
     public AudioManager audio = AudioManager.getInstance();
     public final float fixedTimeStep = 1f / 60f;
 
-    // =======================================================
-    // --- STORY & QUEST SYSTEM ---
-    // =======================================================
+
+    // STORY & QUEST SYSTEM
     public int currentAct = 1;
     public int relicsCollected = 0;
     public final int RELICS_NEEDED = 3;
