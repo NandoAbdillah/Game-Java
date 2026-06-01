@@ -30,13 +30,13 @@ public class BootLoadingScreen extends BaseScreen {
     private Texture bgImageTex;
     private Texture overlayTex;
 
-    // Loading State
+    // loading
     private float targetProgress = 0f;
     private float smoothProgress = 0f;
     private boolean isWarmupDone = false;
-    private StringBuilder sb; // Anti-GC Spike
+    private StringBuilder sb;
 
-    // --- RANDOM TIPS SYSTEM ---
+    // random tips
     private static final String[] AAA_TIPS = {
         "TIPS: Gunakan Biji Timun untuk menyerang Sukma Gowong dari jarak yang aman.",
         "TIPS: Jangan terlalu lama berdiam diri. Hutan ini selalu mengawasimu...",
@@ -156,7 +156,7 @@ public class BootLoadingScreen extends BaseScreen {
                 ShaderWarmup.executeWarmup();
                 isWarmupDone = true;
             } else {
-                // Pindah ke Main Menu
+                // ke main menu
                 ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(1f));
             }
         }
