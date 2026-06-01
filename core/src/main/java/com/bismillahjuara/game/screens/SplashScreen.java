@@ -24,7 +24,6 @@ public class SplashScreen extends BaseScreen {
         rootTable.setFillParent(true);
 
         try {
-            // Load file STUDIO.png dari folder assets
             logoTexture = new Texture(Gdx.files.internal("STUDIO.png"));
             logoTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
