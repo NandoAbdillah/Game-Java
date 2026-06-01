@@ -86,8 +86,7 @@ public class WorldManager {
     private Vector3 tempCenter = new Vector3();
     private Vector3 tempDim = new Vector3();
 
-    // --- AAA TIME-SLICED PIPELINE VARIABLES ---
-    private Array<Node> nodeQueue; // Antrean node yang belum diproses
+    private Array<Node> nodeQueue;
     private int totalNodesToProcess = 0;
 
     public WorldManager(GameContext context) {
@@ -100,43 +99,10 @@ public class WorldManager {
         this.nodeQueue = new Array<>(false, 1024);
     }
 
-    // =========================================================================
-    // TAHAP 1: BACA FILE FISIK DARI HARDDISK (I/O)
-    // =========================================================================
-    public void step1_LoadMapDisk() {
-        long startTime = System.currentTimeMillis();
-        mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Maps.glb"));
-        Gdx.app.log("PROFILE_WORLD", "Load Map.glb dari Disk selesai: " + (System.currentTimeMillis() - startTime) + " ms");
-    }
-
-    // =========================================================================
-    // TAHAP 2: BANGUN SCENE DAN SIAPKAN ANTREAN NODE
-    // =========================================================================
-//    public void step2_BuildSceneAndQueue(SceneRenderer renderer) {
-//        long startTime = System.currentTimeMillis();
-//        if (isDebugMode) debugRenderer = new ShapeRenderer();
-//
-//        mapScene = new Scene(mapAsset.scene);
-//        mapScene.modelInstance.transform.setToScaling(mapScale, mapScale, mapScale);
-//        mapScene.modelInstance.calculateTransforms();
-//
-//        mapScene.modelInstance.calculateBoundingBox(mapBounds);
-//        mapBounds.mul(mapScene.modelInstance.transform);
-//
-//        renderer.addScene(mapScene);
-//
-//        // Jangan proses langsung! Ratakan hirarki tree (Flatten) dan masukkan ke Queue
-//        flattenNodeTree(mapScene.modelInstance.nodes);
-//        totalNodesToProcess = nodeQueue.size;
-//
-//        Gdx.app.log("PROFILE_WORLD", "Build Scene & Flatten " + totalNodesToProcess + " nodes selesai: " + (System.currentTimeMillis() - startTime) + " ms");
-//    }
-
     public void step2_BuildSceneAndQueue(SceneRenderer renderer) {
         long startTime = System.currentTimeMillis();
         if (isDebugMode) debugRenderer = new ShapeRenderer();
 
-        // MENGAMBIL ASET MATANG DARI CACHE (0 ms I/O)
         mapAsset = GameAssets.getInstance().manager.get(GameAssets.MAP_GLB, SceneAsset.class);
 
         mapScene = new Scene(mapAsset.scene);
@@ -153,6 +119,7 @@ public class WorldManager {
 
         Gdx.app.log("PROFILE_WORLD", "Build Scene 22k nodes selesai: " + (System.currentTimeMillis() - startTime) + " ms");
     }
+
     private void flattenNodeTree(Iterable<Node> nodes) {
         for (Node node : nodes) {
             nodeQueue.add(node);
@@ -162,23 +129,17 @@ public class WorldManager {
         }
     }
 
-    // =========================================================================
-    // TAHAP 3: PROSES NODE SECARA NYICIL (TIME-SLICED)
-    // Return TRUE jika semua node sudah selesai diproses.
-    // =========================================================================
     public boolean step3_ProcessNodesAsync() {
         long startTime = System.currentTimeMillis();
         int processedThisFrame = 0;
         BoundingBox box = new BoundingBox();
 
-        // Batasi pemrosesan maksimal 15 milidetik per frame (Menjaga 60 FPS saat loading)
         while (nodeQueue.size > 0 && (System.currentTimeMillis() - startTime) < 15) {
-            Node node = nodeQueue.pop(); // Ambil dari belakang (cepat)
+            Node node = nodeQueue.pop();
             processSingleNode(node, box);
             processedThisFrame++;
         }
 
-        // Jika antrean habis, sembunyikan semua secara default
         if (nodeQueue.size == 0) {
             for (VisibilityChunk chunk : allChunks) {
                 for (VisibilityObject vo : chunk.objects) vo.setVisible(false);
@@ -187,7 +148,7 @@ public class WorldManager {
             return true;
         }
 
-        return false; // Belum selesai, lanjut frame berikutnya
+        return false;
     }
 
     private void processSingleNode(Node node, BoundingBox box) {
@@ -237,12 +198,21 @@ public class WorldManager {
         }
     }
 
+    // --- FIX AAA: METHOD UNTUK MENDAFTARKAN TEMBOK RUMAH DAN CANDI ---
+    public void addCustomCollision(BoundingBox box) {
+        Vector3 center = new Vector3();
+        box.getCenter(center);
+        int cX = MathUtils.floor(center.x / CHUNK_SIZE);
+        int cZ = MathUtils.floor(center.z / CHUNK_SIZE);
+        getOrCreateChunk(cX, cZ).collisions.add(new BoundingBox(box));
+        collisionCount++;
+    }
+
     public float getAsyncProgress() {
         if (totalNodesToProcess == 0) return 0f;
         return 1f - ((float)nodeQueue.size / totalNodesToProcess);
     }
 
-    // --- HELPER UNTUK SPAWN PINTAR ---
     public void getSafeCenterPosition(Vector3 out) {
         float safeMinX = mapBounds.min.x + safePlayMargin;
         float safeMaxX = mapBounds.max.x - safePlayMargin;
@@ -385,8 +355,21 @@ public class WorldManager {
         debugRenderer.end();
     }
 
+//    public void dispose() {
+//        if (mapAsset != null) mapAsset.dispose();
+//        if (debugRenderer != null) debugRenderer.dispose();
+//        spatialHash.clear();
+//        allChunks.clear();
+//        activeChunks.clear();
+//        largeObjects.clear();
+//        nodeQueue.clear();
+//    }
+
     public void dispose() {
-        if (mapAsset != null) mapAsset.dispose();
+        // FIX AAA: JANGAN PERNAH DISPOSE mapAsset DI SINI!
+        // mapAsset adalah milik GameAssets (Singleton Cache).
+        // Jika dihancurkan di sini, RAM akan menjadi "Zombie" dan bikin C++ Crash saat main lagi!
+
         if (debugRenderer != null) debugRenderer.dispose();
         spatialHash.clear();
         allChunks.clear();

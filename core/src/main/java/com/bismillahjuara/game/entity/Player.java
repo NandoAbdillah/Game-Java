@@ -1,11 +1,9 @@
 package com.bismillahjuara.game.entity;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
@@ -15,6 +13,8 @@ import com.badlogic.gdx.math.Vector3;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.input.InputAction;
+import com.bismillahjuara.game.audio.AudioSFX;
+import net.mgsx.gltf.scene3d.lights.PointLightEx;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneAsset;
 
@@ -44,19 +44,26 @@ public class Player extends Entity {
     private AnimationController animationController;
     private float skalaKarakter = 4.0f, visualYOffset = 0.0f;
 
+    public float health = 100f;
     public float dangerTimer = 0f;
-    private Color baseGlow = new Color(0.05f, 0.05f, 0.08f, 1f), healGlow = new Color(0.1f, 0.9f, 0.3f, 1f), currentGlow = new Color(baseGlow);
-    private float healGlowTimer = 0f, footstepTimer = 0f;
 
-    // --- FIX AAA: Cooldown 5 Detik! ---
+    private PointLightEx auraLight;
+    private float healGlowTimer = 0f;
+
+    private float footstepTimer = 0f;
     private float lastThrowTime = 0f;
     private static final float THROW_COOLDOWN = 5.0f;
+
+    // --- FIX AAA: Heartbeat System ---
+    private float heartbeatDurationTimer = 0f;
+    private float heartbeatPulseTimer = 0f;
 
     public Player(GameContext context, SceneAsset asset) {
         super(new Vector3(0, PLAYER_HEIGHT, 0), context);
         this.collisionRadius = 1.0f;
         this.collisionHeight = 4.0f;
         setupVisuals(asset);
+        setupAuraLight();
     }
 
     private void setupVisuals(SceneAsset asset) {
@@ -65,7 +72,6 @@ public class Player extends Entity {
             material.remove(BlendingAttribute.Type);
             material.set(new DepthTestAttribute(GL20.GL_LEQUAL, true));
             material.set(IntAttribute.createCullFace(GL20.GL_BACK));
-            material.set(ColorAttribute.createDiffuse(Color.WHITE));
         }
         applyTransform();
         animationController = playerScene.animationController;
@@ -73,9 +79,23 @@ public class Player extends Entity {
         if (context.sceneRenderer != null) context.sceneRenderer.addScene(playerScene);
     }
 
-    public void addDanger(float amount) {
-        dangerTimer += amount;
-        if (dangerTimer >= 10f && currentState != State.DYING) {
+    private void setupAuraLight() {
+        auraLight = new PointLightEx();
+        auraLight.color.set(0.2f, 0.8f, 0.8f, 1f);
+        auraLight.intensity = 1.5f;
+        context.sceneRenderer.getEnvironment().add(auraLight);
+    }
+
+    public void takeDamage(float amount) {
+        if (currentState == State.DYING) return;
+        health -= amount;
+
+        // Reset timer heartbeat, jantung berdebar selama 3 detik setelah terkena hit
+        heartbeatDurationTimer = 3.0f;
+
+        if (health <= 0) {
+            health = 0;
+            heartbeatDurationTimer = 0f; // Matikan jantung saat game over
             changeState(State.DYING, true);
             context.state = com.bismillahjuara.game.core.GameplayState.GAME_OVER;
         }
@@ -89,36 +109,68 @@ public class Player extends Entity {
     public void processInputAndPhysics(InputAction input, float camYaw, float delta) {
         if (currentState == State.DYING) return;
 
-        // FIX AAA: Pindahkan SEMUA timer ke sini agar DIJAMIN berjalan setiap frame!
         if (lastThrowTime > 0) lastThrowTime -= delta;
-        if (dangerTimer > 0) dangerTimer -= delta * 0.5f;
 
+        // --- UPDATE HEARTBEAT AUDIO ---
+        if (heartbeatDurationTimer > 0) {
+            heartbeatDurationTimer -= delta;
+            heartbeatPulseTimer -= delta;
+            if (heartbeatPulseTimer <= 0) {
+
+                context.audio.playSFX(AudioSFX.HEARTBEAT);
+                heartbeatPulseTimer = 0.8f;
+            }
+        }
+
+        // --- UPDATE LAMPU SENTER / HEAL ---
         if (healGlowTimer > 0) {
             healGlowTimer -= delta;
-            currentGlow.set(baseGlow).lerp(healGlow, MathUtils.clamp(healGlowTimer / 2.0f, 0f, 1f));
+            float progress = healGlowTimer / 2.0f;
+            auraLight.color.set(
+                MathUtils.lerp(0.2f, 0.2f, progress),
+                MathUtils.lerp(0.8f, 1.0f, progress),
+                MathUtils.lerp(0.8f, 0.2f, progress), 1f
+            );
+            auraLight.intensity = MathUtils.lerp(1.5f, 4.0f, progress);
         } else {
-            currentGlow.set(baseGlow);
+            auraLight.color.set(0.2f, 0.8f, 0.8f, 1f);
+            auraLight.intensity = 1.5f;
         }
 
-        for (Material mat : playerScene.modelInstance.materials) {
-            ColorAttribute emissive = (ColorAttribute) mat.get(ColorAttribute.Emissive);
-            if (emissive != null) emissive.color.set(currentGlow);
-        }
+        auraLight.position.set(position.x, position.y + 2.5f, position.z);
 
         if (input.toggleCameraPressed) context.camera.toggleMode();
-        if (input.diePressed) requestState(State.DYING);
-        if (input.healPressed) requestState(State.HEAL);
+
+        if (input.diePressed) {
+            health = 0;
+            changeState(State.DYING, true);
+            context.state = com.bismillahjuara.game.core.GameplayState.GAME_OVER;
+            return;
+        }
+
+        if (input.healPressed && healGlowTimer <= 0) {
+            requestState(State.HEAL);
+            healGlowTimer = 2.0f;
+            health = Math.min(health + 30f, 100f);
+        }
+
         if (input.emotePressed) requestState(State.EMOTE);
 
-        // LOGIKA PENGECEKAN COOLDOWN 5 DETIK
         if (input.throwPressed && lastThrowTime <= 0) {
             throwBiji();
             requestState(State.THROW);
-            lastThrowTime = THROW_COOLDOWN; // Kunci tombol 'E' selama 5 detik!
+            lastThrowTime = THROW_COOLDOWN;
         }
 
-        if (input.kickPressed) requestState(State.KICK);
-        if (input.attackPressed) requestState(State.COMBAT);
+        if (input.kickPressed) {
+            performMeleeAttack(34f);
+            requestState(State.KICK);
+        }
+        if (input.attackPressed) {
+            performMeleeAttack(34f);
+            requestState(State.COMBAT);
+        }
+
         if (input.jumpPressed) requestState(input.sprintHeld && (input.moveX != 0 || input.moveY != 0) ? State.JUMP_RUN : State.JUMP);
         if (input.crouchToggled && currentState.priority == 0) { isCrouching = !isCrouching; isCombatMode = false; }
 
@@ -162,6 +214,17 @@ public class Player extends Entity {
         handleFootstepAudio(delta, isGrounded, hasInput);
     }
 
+    private void performMeleeAttack(float damage) {
+        for (Entity e : context.entityManager.getEntities()) {
+            if (e instanceof SukmaGowong) {
+                SukmaGowong enemy = (SukmaGowong) e;
+                if (!enemy.isDead() && position.dst(enemy.getPosition()) < 3.0f) {
+                    enemy.takeDamage(damage);
+                }
+            }
+        }
+    }
+
     private void handleFootstepAudio(float delta, boolean isGrounded, boolean hasInput) {
         if (isGrounded && hasInput && (currentState == State.WALK || currentState == State.RUN || currentState == State.CROUCH_WALK)) {
             footstepTimer -= delta;
@@ -180,13 +243,12 @@ public class Player extends Entity {
         float spawnX = position.x + (MathUtils.sin(yawRad) * 1.5f);
         float spawnZ = position.z + (MathUtils.cos(yawRad) * 1.5f);
 
-        // Lempar 15 peluru menyebar!
         for (int i = 0; i < 15; i++) {
             context.entityManager.addEntity(new BijiTimunProjectile(
                 new Vector3(spawnX, position.y + 2.5f, spawnZ),
                 yaw + MathUtils.random(-35f, 35f),
                 context,
-                (i == 0) // FIX: Hanya peluru pertama yang bunyi, biar HP ga ngelag/budek!
+                (i == 0)
             ));
         }
     }
@@ -258,6 +320,9 @@ public class Player extends Entity {
     }
 
     public void dispose() {
-        if (context.sceneRenderer != null && playerScene != null) context.sceneRenderer.removeScene(playerScene);
+        if (context.sceneRenderer != null && playerScene != null) {
+            context.sceneRenderer.removeScene(playerScene);
+            if (auraLight != null) context.sceneRenderer.getEnvironment().remove(auraLight);
+        }
     }
 }

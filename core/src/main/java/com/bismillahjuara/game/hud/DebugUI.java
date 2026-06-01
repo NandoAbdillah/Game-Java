@@ -1,27 +1,36 @@
 package com.bismillahjuara.game.hud;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
 import com.badlogic.gdx.utils.Align;
 import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.ui.FontManager;
 
 public class DebugUI {
     private Table rootTable;
+    private Table hudTable;
 
-    // HUD Elements
     private Label missionLabel;
     private Label statsLabel;
 
-    // Cinematic Elements
+    private Image hpBackground;
+    private Image hpForeground;
+    private Texture hpBgTex;
+    private Texture hpFgTex;
+
     private Table cinematicTable;
     private Label cineTitle;
     private Label cineDesc;
 
-    // Typewriter state
+    private Texture cinematicBgTex;
+
     private String targetDescText = "";
     private int typeIndex = 0;
     private float typeTimer = 0f;
@@ -37,17 +46,59 @@ public class DebugUI {
         statsLabel = new Label("", hudStyle);
         statsLabel.setAlignment(Align.right);
 
-        // Top Left & Top Right HUD Layout
-        Table hudTable = new Table();
+        Pixmap bgPix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        bgPix.setColor(0.2f, 0.2f, 0.2f, 0.8f);
+        bgPix.fill();
+        hpBgTex = new Texture(bgPix);
+        bgPix.dispose();
+
+        Pixmap fgPix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        fgPix.setColor(Color.WHITE);
+        fgPix.fill();
+        hpFgTex = new Texture(fgPix);
+        fgPix.dispose();
+
+        hpBackground = new Image(hpBgTex);
+        hpForeground = new Image(hpFgTex);
+
+        WidgetGroup hpGroup = new WidgetGroup();
+        hpBackground.setSize(200, 20);
+        hpForeground.setSize(200, 20);
+        hpGroup.addActor(hpBackground);
+        hpGroup.addActor(hpForeground);
+
+        hudTable = new Table();
         hudTable.setFillParent(true);
         hudTable.top().pad(40);
         hudTable.add(missionLabel).expandX().left().top();
-        hudTable.add(statsLabel).expandX().right().top();
 
-        // Cinematic Overlay
+        Table rightTable = new Table();
+        rightTable.add(statsLabel).right().row();
+        rightTable.add(new Label("HP Timun", hudStyle)).right().padTop(10).row();
+        rightTable.add(hpGroup).size(200, 20).right().padTop(5);
+
+        hudTable.add(rightTable).expandX().right().top();
+
+        // --- FIX AAA: BACKGROUND HITAM 100% WORK ---
+        // Kita tidak pakai .setBackground(drawable) karena sering bermasalah saat fade di Scene2D.
+        // Solusinya: Kita pakai objek Image sungguhan yang menutupi layar!
         cinematicTable = new Table();
         cinematicTable.setFillParent(true);
-        cinematicTable.getColor().a = 0f; // Hidden by default
+        cinematicTable.getColor().a = 0f;
+
+        Pixmap cinePix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        cinePix.setColor(0f, 0f, 0f, 0.85f); // Hitam transparan 85%
+        cinePix.fill();
+        cinematicBgTex = new Texture(cinePix);
+        cinePix.dispose();
+
+        Image bgImage = new Image(cinematicBgTex);
+        bgImage.setFillParent(true); // Penuhi layar
+        cinematicTable.addActor(bgImage); // Taruh di layer paling belakang
+
+        // Bikin tabel lagi khusus untuk wadah Teks di atas background hitam
+        Table contentTable = new Table();
+        contentTable.setFillParent(true);
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(FontManager.getInstance().getFont(), Color.GOLD);
         cineTitle = new Label("", titleStyle);
@@ -58,8 +109,10 @@ public class DebugUI {
         cineDesc.setAlignment(Align.center);
         cineDesc.setWrap(true);
 
-        cinematicTable.add(cineTitle).padBottom(30).row();
-        cinematicTable.add(cineDesc).width(900).center();
+        contentTable.add(cineTitle).padBottom(30).row();
+        contentTable.add(cineDesc).width(900).center();
+
+        cinematicTable.addActor(contentTable); // Taruh Teks di atas Background Hitam
 
         rootTable.addActor(hudTable);
         rootTable.addActor(cinematicTable);
@@ -67,9 +120,10 @@ public class DebugUI {
 
     public Table getRootTable() { return rootTable; }
 
-    /**
-     * Memutar Cinematic Overlay dengan Typewriter Effect
-     */
+    public void hideHUD() {
+        hudTable.setVisible(false);
+    }
+
     public void playCinematic(String title, String desc, float duration, Runnable onComplete) {
         cineTitle.setText(title);
         cineDesc.setText("");
@@ -98,7 +152,15 @@ public class DebugUI {
     }
 
     public void update(float delta, GameContext context) {
-        // Logika Typewriter Effect (Kecepatan 0.03 detik per huruf)
+        float hpPercent = context.player.health / 100f;
+        hpForeground.setWidth(200f * hpPercent);
+
+        if (hpPercent < 0.3f) {
+            hpForeground.setColor(Color.RED);
+        } else {
+            hpForeground.setColor(Color.GREEN);
+        }
+
         if (isTyping && typeIndex < targetDescText.length()) {
             typeTimer += delta;
             if (typeTimer >= 0.03f) {
@@ -108,15 +170,14 @@ public class DebugUI {
             }
         }
 
-        // Update Text HUD sesuai Act
         if (context.currentAct == 1) {
             missionLabel.setText("MISI\nCari 3 Relik Pusaka");
-            statsLabel.setText("Relik: " + context.relicsCollected + " / 3\nHP Timun: 100");
+            statsLabel.setText("Relik: " + context.relicsCollected + " / 3");
         } else if (context.currentAct == 2) {
             missionLabel.setText("MISI\nKalahkan Buto Ijo");
             int butoHp = context.boss != null ? (10 - context.butoHits) : 10;
             if (butoHp < 0) butoHp = 0;
-            statsLabel.setText("HP Timun: 100\nHP Buto Ijo: " + butoHp + "\nHit Buto Ijo: " + context.butoHits + " / 10");
+            statsLabel.setText("HP Buto Ijo: " + butoHp + "\nHit Buto Ijo: " + context.butoHits + " / 10");
         }
     }
 }
