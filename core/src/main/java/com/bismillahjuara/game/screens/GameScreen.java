@@ -27,7 +27,7 @@ public class GameScreen implements Screen {
     private GameInputHandler inputHandler;
     private AdvancedCameraSystem camera;
 
-    // --- STATE JUMPSCARE VIDEO ---
+    // jumpscare
     private boolean isJumpscareTriggered = false;
     private boolean isVideoFinished = false;
     private boolean isGameOverCinematicPlaying = false;
@@ -86,7 +86,7 @@ public class GameScreen implements Screen {
                         }
                     }
                 );
-                // Putar lagu THEME saat cinematic layar hitam berjalan
+                // putar backsound
                 AudioManager.getInstance().playMusic(AudioTrack.THEME, 2f);
             }
         };
@@ -236,7 +236,7 @@ public class GameScreen implements Screen {
             if (jumpscareVideo != null) { jumpscareVideo.dispose(); jumpscareVideo = null; }
             if (jumpscareAudio != null) { jumpscareAudio.dispose(); jumpscareAudio = null; }
 
-            // Panggil UI Cinematic Game Over
+            // ui game over
             hudManager.getDebugUI().playCinematic(
                 "GAME OVER",
                 "Timun menemukan fakta bahwa Sukma Gowong adalah entitas gaib yang mengambil jiwa seseorang karena ia dalah hasil dari praktik ilmu hitam yang gagal !",
