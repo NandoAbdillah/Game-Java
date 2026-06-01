@@ -168,7 +168,9 @@ public class MainMenuScreen extends BaseScreen {
 
         if (btnContinueTex != null) {
             addMenuImageButton(btnContinueTex, () -> {
-                // TODO: Load save game
+                AudioManager.getInstance().stopMusic(1f);
+                ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), new FadeTransition(0.5f));
+
             });
         }
 

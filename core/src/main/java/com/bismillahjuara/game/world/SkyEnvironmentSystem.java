@@ -36,25 +36,23 @@ public class SkyEnvironmentSystem {
     private ModelInstance skyInstance, cloudInstance, fogInstance;
     private Texture skyTex, cloudTex, fogTex;
 
-    // --- LIGHTING STATE ---
     private SceneManager targetSceneManager;
     private DirectionalLightEx targetSunLight;
 
-    // Warna Normal Horror
-    private final Color normalAmbientColor = new Color(0.15f, 0.15f, 0.20f, 1f);
-    private final Color normalSunColor = new Color(0.1f, 0.15f, 0.25f, 1f); // Cahaya bulan pucat
-    private final float normalSunIntensity = 0.5f;
+    // --- FIX AAA: SETTING HORROR SEJATI ---
+    // Ambient: Sangat redup agar area tanpa senter terlihat hitam (0.05f)
+    private final Color normalAmbientColor = new Color(0.05f, 0.05f, 0.08f, 1f);
+    // Matahari/Bulan: Warna biru malam pucat, tidak menyilaukan
+    private final Color normalSunColor = new Color(0.2f, 0.3f, 0.4f, 1f);
+    private final float normalSunIntensity = 0.2f;
 
-    // Warna Petir
-    private final Color flashColor = new Color(0.8f, 0.9f, 1.0f, 1f); // Putih kebiruan terang
+    private final Color flashColor = new Color(0.8f, 0.9f, 1.0f, 1f);
 
-    // --- LIGHTNING STATE MACHINE ---
     private float nextStrikeTimer = 5f;
     private boolean isFlashing = false;
     private float flashDuration = 0f;
     private float flashIntensityTarget = 0f;
 
-    // --- THUNDER AUDIO STATE ---
     private boolean isWaitingForThunder = false;
     private float thunderDelayTimer = 0f;
 
@@ -69,9 +67,9 @@ public class SkyEnvironmentSystem {
     }
 
     private void loadTextures() {
-        // Defensive Loading: Jika file tidak ada, otomatis buat tekstur warna solid (Anti-Crash)
-        skyTex = loadTextureSafe("textures/panorama.png", new Color(0.05f, 0.05f, 0.08f, 1f));
-        cloudTex = loadTextureSafe("textures/clouds.png", new Color(1f, 1f, 1f, 0.0f)); // Alpha 0 fallback
+        // FIX AAA: Kalau panorama.png ga ada, warnanya jadi Biru Malam Estetik (Bukan hitam buta)
+        skyTex = loadTextureSafe("textures/panorama.png", new Color(0.15f, 0.25f, 0.45f, 1f));
+        cloudTex = loadTextureSafe("textures/clouds.png", new Color(1f, 1f, 1f, 0.0f));
         fogTex = loadTextureSafe("textures/fog.png", new Color(0.5f, 0.5f, 0.5f, 0.0f));
     }
 
@@ -81,7 +79,6 @@ public class SkyEnvironmentSystem {
             t.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.ClampToEdge);
             return t;
         } else {
-            Gdx.app.log("SKY_SYSTEM", "Missing texture: " + path + ". Menggunakan fallback color.");
             Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pixmap.setColor(fallback);
             pixmap.fill();
@@ -94,28 +91,25 @@ public class SkyEnvironmentSystem {
     private void buildNestedSpheres() {
         ModelBuilder mb = new ModelBuilder();
         int attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.TextureCoordinates;
-        int divisions = 32; // Cukup halus untuk mobile
+        int divisions = 32;
 
-        // 1. SKY PANORAMA (Bola Terluar)
         Material skyMat = new Material(
             TextureAttribute.createDiffuse(skyTex),
-            IntAttribute.createCullFace(0), // Matikan culling agar terlihat dari dalam bola
-            new DepthTestAttribute(false)   // PENTING: Langit tidak peduli kedalaman
+            IntAttribute.createCullFace(0),
+            new DepthTestAttribute(false)
         );
         skyModel = mb.createSphere(200f, 200f, 200f, divisions, divisions, skyMat, attr);
         skyInstance = new ModelInstance(skyModel);
 
-        // 2. CLOUD LAYER (Bola Tengah)
         Material cloudMat = new Material(
             TextureAttribute.createDiffuse(cloudTex),
-            new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA), // Support transparan
+            new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA),
             IntAttribute.createCullFace(0),
             new DepthTestAttribute(false)
         );
         cloudModel = mb.createSphere(190f, 190f, 190f, divisions, divisions, cloudMat, attr);
         cloudInstance = new ModelInstance(cloudModel);
 
-        // 3. FOG LAYER (Bola Dalam)
         Material fogMat = new Material(
             TextureAttribute.createDiffuse(fogTex),
             new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA),
@@ -127,10 +121,6 @@ public class SkyEnvironmentSystem {
     }
 
     public void update(float delta, Vector3 cameraPosition) {
-        // FIX AAA HORIZON BLENDING:
-        // Turunkan titik pusat bola sejauh 15 meter ke bawah tanah.
-        // Ini akan memotong kutub bawah bola sehingga panorama terlihat datar (flat horizon)
-        // dan menutupi tepian map yang terpotong secara natural!
         float skyYOffset = cameraPosition.y - 15f;
 
         skyInstance.transform.setToTranslation(cameraPosition.x, skyYOffset, cameraPosition.z);
@@ -150,22 +140,18 @@ public class SkyEnvironmentSystem {
             }
         } else {
             flashDuration -= delta;
-
-            // Efek Flash Acak (Flicker) selama durasi petir
             if (flashDuration > 0) {
                 float flicker = MathUtils.random(0.5f, 1.0f);
                 targetSunLight.color.set(flashColor);
                 targetSunLight.intensity = flashIntensityTarget * flicker;
-                targetSceneManager.setAmbientLight(0.8f * flicker); // Dunia tiba-tiba terang
+                targetSceneManager.setAmbientLight(0.8f * flicker);
             } else {
-                // Selesai Flash, kembalikan dunia ke horror gelap
                 resetLightingToNormal();
                 isFlashing = false;
-                nextStrikeTimer = MathUtils.random(10f, 30f); // Petir berikutnya 10-30 detik lagi
+                nextStrikeTimer = MathUtils.random(10f, 30f);
             }
         }
 
-        // 4. UPDATE THUNDER AUDIO DELAY (Efek kecepatan suara realistik)
         if (isWaitingForThunder) {
             thunderDelayTimer -= delta;
             if (thunderDelayTimer <= 0) {
@@ -177,10 +163,9 @@ public class SkyEnvironmentSystem {
 
     private void triggerLightningStrike() {
         isFlashing = true;
-        flashDuration = MathUtils.random(0.1f, 0.4f); // Kilatan hanya sekejap mata
-        flashIntensityTarget = MathUtils.random(3.0f, 5.0f); // Terang benderang
+        flashDuration = MathUtils.random(0.1f, 0.4f);
+        flashIntensityTarget = MathUtils.random(3.0f, 5.0f);
 
-        // Suara petir datang menyusul (1 hingga 4 detik setelah kilat)
         isWaitingForThunder = true;
         thunderDelayTimer = MathUtils.random(1.0f, 4.0f);
     }
@@ -197,20 +182,13 @@ public class SkyEnvironmentSystem {
         targetSceneManager.environment.set(new ColorAttribute(ColorAttribute.AmbientLight, normalAmbientColor));
     }
 
-    /**
-     * Wajib dipanggil SEBELUM sceneManager.render()
-     */
     public void render(PerspectiveCamera camera) {
-        // Matikan Depth Mask agar 3D Map yang dirender setelah ini menimpa/menutup langit
         Gdx.gl.glDepthMask(false);
-
         skyBatch.begin(camera);
         skyBatch.render(skyInstance);
         skyBatch.render(cloudInstance);
         skyBatch.render(fogInstance);
         skyBatch.end();
-
-        // Nyalakan kembali Depth Mask untuk rendering dunia 3D normal
         Gdx.gl.glDepthMask(true);
     }
 

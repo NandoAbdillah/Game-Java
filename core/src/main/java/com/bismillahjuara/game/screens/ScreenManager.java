@@ -51,8 +51,13 @@ public class ScreenManager {
             this.nextScreen.show();
             this.nextScreen.resize(com.badlogic.gdx.Gdx.graphics.getWidth(), com.badlogic.gdx.Gdx.graphics.getHeight());
         } else {
-            // Transisi Instan
-            if (currentScreen != null) currentScreen.hide();
+            if (currentScreen != null) {
+                currentScreen.hide();
+                // FIX AAA: Jangan dispose jika layarnya tipe yang sama (misal dari GameScreen lama ke GameScreen baru untuk Act 2)
+                if (currentScreen.getClass() != nextScreen.getClass()) {
+                    currentScreen.dispose();
+                }
+            }
             game.setScreen(nextScreen);
             currentScreen = nextScreen;
         }
@@ -84,7 +89,10 @@ public class ScreenManager {
         if (alpha >= 1f) {
             if (currentScreen != null) {
                 currentScreen.hide();
-                currentScreen.dispose(); // Otomatis bersih-bersih memori layar lama!
+                // FIX AAA: Mencegah JVM Crash (Access Violation) akibat men-dispose VRAM yang sedang di-reuse
+                if (currentScreen.getClass() != nextScreen.getClass()) {
+                    currentScreen.dispose();
+                }
             }
             currentScreen = nextScreen;
             game.setScreen(currentScreen);

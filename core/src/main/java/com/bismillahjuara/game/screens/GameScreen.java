@@ -3,18 +3,22 @@ package com.bismillahjuara.game.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.bismillahjuara.game.audio.AudioManager;
-import com.bismillahjuara.game.audio.AudioSFX;
+import com.bismillahjuara.game.audio.AudioTrack;
 import com.bismillahjuara.game.managers.GameplayManager;
 import com.bismillahjuara.game.core.GameplayState;
 import com.bismillahjuara.game.hud.HudManager;
 import com.bismillahjuara.game.input.GameInputHandler;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.transitions.FadeTransition;
+import com.badlogic.gdx.video.VideoPlayer;
+import com.badlogic.gdx.video.VideoPlayerCreator;
 
 public class GameScreen implements Screen {
 
@@ -23,11 +27,12 @@ public class GameScreen implements Screen {
     private GameInputHandler inputHandler;
     private AdvancedCameraSystem camera;
 
-    // Jumpscare variables
+    // --- STATE JUMPSCARE VIDEO ---
     private boolean isJumpscareTriggered = false;
-    private float jumpscareTimer = 0f;
-    private Image jumpscareOverlay;
-    private Texture bloodyTexture;
+    private boolean isVideoFinished = false;
+    private boolean isGameOverCinematicPlaying = false;
+    private VideoPlayer jumpscareVideo;
+    private Music jumpscareAudio;
 
     public GameScreen() {
         gameplayManager = new GameplayManager();
@@ -52,12 +57,7 @@ public class GameScreen implements Screen {
         hudManager = new HudManager();
         inputHandler = new GameInputHandler(camera, hudManager);
         gameplayManager.bindInput(inputHandler);
-        setupJumpscareUI();
 
-        // ==========================================================
-        // FIX TAHAP 1: WIRING PAUSE MENU CALLBACKS
-        // Menghubungkan tombol Pause UI dengan fungsi logika di GameScreen
-        // ==========================================================
         hudManager.getPauseMenuUI().onResumeCallback = new Runnable() {
             @Override public void run() { resumeGame(); }
         };
@@ -70,17 +70,25 @@ public class GameScreen implements Screen {
             @Override public void run() { Gdx.app.exit(); }
         };
 
-        // --- TAMBAHAN PHASE 3: WIRING STORY CINEMATICS ---
         gameplayManager.onAct1Cinematic = new Runnable() {
             @Override public void run() {
+
                 hudManager.getDebugUI().playCinematic(
                     "ACT I : PUSAKA YANG HILANG",
                     "Bukan sihir cahaya, melainkan benda-benda ritual peninggalan ibunya yang terasa berat dan mistis tersebar di dalam hutan.\n\nTimun harus menemukan seluruh pusaka tersebut jika ingin memiliki kekuatan untuk menghadapi Buto Ijo.",
-                    12f, // FIX 1: Durasi DIPANJANGKAN jadi 12 detik agar teks selesai diketik!
-                    new Runnable() { @Override public void run() { gameplayManager.resumeGame(); } }
+                    6f,
+                    new Runnable() {
+                        @Override public void run() {
+                            gameplayManager.resumeGame();
+
+                            // FIX AAA: Matikan lagu THEME dengan fade out 1 detik, lalu putar suara hutan!
+                            AudioManager.getInstance().stopMusic(1f);
+                            AudioManager.getInstance().playAmbient(AudioTrack.FOREST_AMBIENT);
+                        }
+                    }
                 );
-                // Matikan semua lagu lama, ganti ke lagu Theme untuk hutan
-                AudioManager.getInstance().playMusic(com.bismillahjuara.game.audio.AudioTrack.THEME, 2f);
+                // Putar lagu THEME saat cinematic layar hitam berjalan
+                AudioManager.getInstance().playMusic(AudioTrack.THEME, 2f);
             }
         };
 
@@ -89,16 +97,19 @@ public class GameScreen implements Screen {
                 hudManager.getDebugUI().playCinematic(
                     "ACT II : TIMUN REVENGE'S",
                     "Ibunya berpesan bahwa pusaka-pusaka tersebut menyimpan kekuatan yang cukup untuk membalas dendam.\n\nButo Ijo harus dihentikan sebelum semuanya terlambat. Lemparkan pusaka timun sebanyak 10 kali untuk mengalahkannya.",
-                    10f, // FIX 1: Durasi DIPANJANGKAN
+                    6f,
                     new Runnable() {
                         @Override public void run() {
                             gameplayManager.spawnButoIjo();
                             gameplayManager.resumeGame();
+
+                            // FIX AAA: Matikan suara hutan/theme, langsung ganti lagu BOSS BATTLE!
+                            AudioManager.getInstance().stopMusic(1f);
+                            AudioManager.getInstance().playMusic(AudioTrack.BOSS_THEME, 1f);
                         }
                     }
                 );
-                // Putar lagu Boss Fight (Asumsi kamu punya BATTLE_THEME)
-                AudioManager.getInstance().playMusic(com.bismillahjuara.game.audio.AudioTrack.BATTLE_THEME, 2f);
+                AudioManager.getInstance().playMusic(AudioTrack.THEME, 2f);
             }
         };
 
@@ -123,22 +134,6 @@ public class GameScreen implements Screen {
                 );
             }
         };
-
-        Gdx.app.log("PROFILE_GAMESCREEN", "Init UI selesai: " + (System.currentTimeMillis() - startTime) + " ms");
-    }
-
-    private void setupJumpscareUI() {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(new Color(0.8f, 0f, 0f, 0.6f));
-        pixmap.fill();
-        bloodyTexture = new Texture(pixmap);
-        pixmap.dispose();
-
-        jumpscareOverlay = new Image(bloodyTexture);
-        jumpscareOverlay.setFillParent(true);
-        jumpscareOverlay.setVisible(false);
-
-        hudManager.getStage().addActor(jumpscareOverlay);
     }
 
     private void pauseGame() {
@@ -165,6 +160,7 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         if (gameplayManager == null) return;
 
+        // --- INTERUPSI GAME OVER (JUMPSCARE VIDEO) ---
         if (gameplayManager.getContext().state == GameplayState.GAME_OVER) {
             handleJumpscareSequence(delta);
             return;
@@ -190,22 +186,85 @@ public class GameScreen implements Screen {
     }
 
     private void handleJumpscareSequence(float delta) {
+        // 1. TRIGGER PERTAMA KALI MATI
         if (!isJumpscareTriggered) {
             isJumpscareTriggered = true;
+
+            // Matikan semua BGM dan Ambient agar tegang
             AudioManager.getInstance().stopMusic(0f);
-            AudioManager.getInstance().playSFX(AudioSFX.JUMPSCARE);
-            jumpscareOverlay.setVisible(true);
+            AudioManager.getInstance().stopAmbient();
+
+            // Sembunyikan UI dan Misi (Biar nggak nutupin jumpscare)
+            hudManager.getDebugUI().hideHUD();
+
+            try {
+                jumpscareVideo = VideoPlayerCreator.createVideoPlayer();
+                jumpscareVideo.load(Gdx.files.internal("video/jumpscare.webm"));
+                jumpscareVideo.setLooping(false);
+                jumpscareVideo.setVolume(0f);
+                jumpscareVideo.setOnCompletionListener(file -> {
+                    Gdx.app.postRunnable(() -> {
+                        isVideoFinished = true;
+                    });
+                });
+                jumpscareVideo.play();
+
+                // Mainkan suara ogg-nya secara paralel
+                jumpscareAudio = Gdx.audio.newMusic(Gdx.files.internal("video/jumpscare.ogg"));
+                jumpscareAudio.play();
+
+            } catch (Exception e) {
+                Gdx.app.error("JUMPSCARE", "Gagal play video jumpscare", e);
+                isVideoFinished = true; // Fallback langsung ke text jika gagal
+            }
         }
 
-        jumpscareTimer += delta;
-        jumpscareOverlay.getColor().a = com.badlogic.gdx.math.MathUtils.random(0.3f, 1.0f);
+        // 2. VIDEO SEDANG BERJALAN
+        if (jumpscareVideo != null && !isVideoFinished) {
+            Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        if (jumpscareTimer > 2.0f) {
-            ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(2.0f));
+            jumpscareVideo.update();
+            Texture frame = jumpscareVideo.getTexture();
+            if (frame != null) {
+                SpriteBatch batch = (SpriteBatch) hudManager.getStage().getBatch();
+                batch.begin();
+
+                // FIX AAA: Wajib reset warna batch ke Putih Solid!
+                // Kalau tidak, videonya bakal ikut transparan/hitam gara-gara sisa render UI sebelumnya!
+                batch.setColor(com.badlogic.gdx.graphics.Color.WHITE);
+
+                batch.draw(frame, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                batch.end();
+            }
         }
 
-        gameplayManager.render(0f);
-        hudManager.getStage().draw();
+
+        // 3. VIDEO SELESAI -> MUNCULKAN TEXT GAME OVER
+        else if (isVideoFinished && !isGameOverCinematicPlaying) {
+            isGameOverCinematicPlaying = true;
+
+            if (jumpscareVideo != null) { jumpscareVideo.dispose(); jumpscareVideo = null; }
+            if (jumpscareAudio != null) { jumpscareAudio.dispose(); jumpscareAudio = null; }
+
+            // Panggil UI Cinematic Game Over
+            hudManager.getDebugUI().playCinematic(
+                "GAME OVER",
+                "Timun menemukan fakta bahwa Sukma Gowong adalah entitas gaib yang mengambil jiwa seseorang karena ia dalah hasil dari praktik ilmu hitam yang gagal !",
+                10f,
+                () -> {
+                    ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(2f));
+                }
+            );
+        }
+
+        // 4. RENDER UI SAAT CINEMATIC GAME OVER
+        if (isGameOverCinematicPlaying) {
+            Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+            hudManager.updateAndRender(gameplayManager.getContext());
+        }
     }
 
     @Override
@@ -218,10 +277,28 @@ public class GameScreen implements Screen {
     @Override public void resume() {}
     @Override public void hide()   { Gdx.input.setInputProcessor(null); }
 
+//    @Override
+//    public void dispose() {
+//        if (gameplayManager != null) gameplayManager.dispose();
+//        if (hudManager != null) hudManager.dispose();
+//        if (jumpscareVideo != null) jumpscareVideo.dispose();
+//        if (jumpscareAudio != null) jumpscareAudio.dispose();
+//    }
+
     @Override
     public void dispose() {
-        if (gameplayManager != null) gameplayManager.dispose();
+        // FIX AAA: Biarkan ScreenManager yang mengurus memory leak antar-layar.
+        // Men-dispose manager di sini sangat berbahaya jika pemain langsung klik "Play Act 2"
+        // tanpa menutup game, karena VRAM sedang diakses oleh layar baru.
         if (hudManager != null) hudManager.dispose();
-        if (bloodyTexture != null) bloodyTexture.dispose();
+        if (jumpscareVideo != null) jumpscareVideo.dispose();
+        if (jumpscareAudio != null) jumpscareAudio.dispose();
+
+        // Hapus entitas saja tanpa membunuh SceneRenderer global (Karena dipakai oleh layar Act 2)
+        if (gameplayManager != null && gameplayManager.getContext() != null) {
+            if (gameplayManager.getContext().entityManager != null) {
+                gameplayManager.getContext().entityManager.dispose();
+            }
+        }
     }
 }

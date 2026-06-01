@@ -41,7 +41,12 @@ public class SplashScreen extends BaseScreen {
         // Set alpha awal ke 0 (menghilang)
         studioLogo.getColor().a = 0f;
 
-        rootTable.add(studioLogo).expand().center();
+        rootTable.add(studioLogo)
+            .width(400)
+            .height(280)
+            .expand()
+            .center();
+
         stage.addActor(rootTable);
     }
 
