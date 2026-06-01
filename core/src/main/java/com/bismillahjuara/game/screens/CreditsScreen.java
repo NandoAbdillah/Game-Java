@@ -55,7 +55,7 @@ public class CreditsScreen extends BaseScreen {
 
         addTitle(titleStyle, "CAST");
         addDoubleColumn(roleStyle, "Timun Mas", nameStyle, "Shinta Nur'aini Dwi");
-        addDoubleColumn(roleStyle, "Sukma Gowong", nameStyle, "Rehil Azrilla Multajabah");
+        addDoubleColumn(roleStyle, "Ibu Timun Mas", nameStyle, "Rehil Azrilla Multajabah");
         addDoubleColumn(roleStyle, "Buto Ijo", nameStyle, "Nando Abdillah Salam");
         addDoubleColumn(roleStyle, "Misterious Whispers", nameStyle, "M. Naufal Wicaksono");
         addQuote(quoteStyle, "\"Mereka bilang game horror itu seram, sampai kamu melihat file project-nya.\"");
@@ -136,7 +136,7 @@ public class CreditsScreen extends BaseScreen {
         addSingleColumn(nameStyle, "Blender 3D\nMixamo");
         addSpace();
         addSubtitle(subtitleStyle, "AI Assisted Production");
-        addSingleColumn(nameStyle, "Tencent Hunyuan\nGoogle Gemini");
+        addSingleColumn(nameStyle, "Tencent Hunyuan");
         addSpace();
         addSubtitle(subtitleStyle, "Video Production");
         addSingleColumn(nameStyle, "CapCut");
