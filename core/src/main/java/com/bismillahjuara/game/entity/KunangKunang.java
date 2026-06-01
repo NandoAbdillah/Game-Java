@@ -37,12 +37,10 @@ public class KunangKunang extends Entity {
     private void buildParticle() {
         if (sharedParticleModel == null) {
             ModelBuilder mb = new ModelBuilder();
-            // FIX AAA: Warna Emas/Kuning terang
             Material mat = new Material(
                 ColorAttribute.createDiffuse(Color.YELLOW),
                 ColorAttribute.createEmissive(Color.GOLD)
             );
-            // Ukuran sedikit dibesarkan
             sharedParticleModel = mb.createBox(0.06f, 0.06f, 0.06f, mat, Usage.Position | Usage.Normal);
         }
 

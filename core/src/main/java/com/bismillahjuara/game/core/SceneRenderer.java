@@ -13,16 +13,11 @@ import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
 import net.mgsx.gltf.scene3d.scene.Scene;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
-/**
- * Manager Grafis 3D Tertinggi.
- * Menampung semua model (Scene), Langit (Sky), dan Cahaya.
- */
 public class SceneRenderer {
 
     private SceneManager sceneManager;
     private DirectionalLightEx mainSunLight;
 
-    // AAA Living Sky
     private SkyEnvironmentSystem skySystem;
 
     public SceneRenderer() {

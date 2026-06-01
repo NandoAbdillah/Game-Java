@@ -54,7 +54,6 @@ public class Player extends Entity {
     private float lastThrowTime = 0f;
     private static final float THROW_COOLDOWN = 5.0f;
 
-    // --- FIX AAA: Heartbeat System ---
     private float heartbeatDurationTimer = 0f;
     private float heartbeatPulseTimer = 0f;
 
@@ -90,12 +89,11 @@ public class Player extends Entity {
         if (currentState == State.DYING) return;
         health -= amount;
 
-        // Reset timer heartbeat, jantung berdebar selama 3 detik setelah terkena hit
         heartbeatDurationTimer = 3.0f;
 
         if (health <= 0) {
             health = 0;
-            heartbeatDurationTimer = 0f; // Matikan jantung saat game over
+            heartbeatDurationTimer = 0f;
             changeState(State.DYING, true);
             context.state = com.bismillahjuara.game.core.GameplayState.GAME_OVER;
         }
@@ -111,7 +109,6 @@ public class Player extends Entity {
 
         if (lastThrowTime > 0) lastThrowTime -= delta;
 
-        // --- UPDATE HEARTBEAT AUDIO ---
         if (heartbeatDurationTimer > 0) {
             heartbeatDurationTimer -= delta;
             heartbeatPulseTimer -= delta;
@@ -122,7 +119,6 @@ public class Player extends Entity {
             }
         }
 
-        // --- UPDATE LAMPU SENTER / HEAL ---
         if (healGlowTimer > 0) {
             healGlowTimer -= delta;
             float progress = healGlowTimer / 2.0f;

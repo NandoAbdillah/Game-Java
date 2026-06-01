@@ -8,10 +8,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.bismillahjuara.game.pipeline.AsyncGameplayLoader;
 import com.bismillahjuara.game.transitions.FadeTransition;
 
-/**
- * Layar Loading Gameplay yang tidak akan pernah Freeze.
- * Berjalan beriringan dengan AsyncGameplayLoader.
- */
 public class StreamingLoadingOverlay extends BaseScreen {
 
     private AsyncGameplayLoader loader;
@@ -33,10 +29,9 @@ public class StreamingLoadingOverlay extends BaseScreen {
     }
 
     private void setupPlaceholderUI() {
-        // TODO: Replace dengan artwork background AAA & animated spinner
         Table table = new Table();
         table.setFillParent(true);
-        table.bottom().right().pad(50); // Taruh di pojok kanan bawah ala Genshin
+        table.bottom().right().pad(50);
 
         font = new BitmapFont();
         font.getData().setScale(2f);
@@ -53,16 +48,13 @@ public class StreamingLoadingOverlay extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        super.render(delta); // Clear hitam murni
+        super.render(delta);
 
-        // 1. UPDATE PIPELINE (Mencicil pembuatan World 1 langkah per frame)
         loader.update();
 
-        // 2. FAKE SMOOTH PROGRESS BAR (Interpolasi)
         float target = loader.getProgress();
         smoothProgress = MathUtils.lerp(smoothProgress, target, delta * 3f);
 
-        // 3. ANIMASI TITIK (Loading. / Loading.. / Loading...) tanpa alokasi objek
         dotTimer += delta;
         if (dotTimer > 0.4f) {
             dotTimer = 0f;
@@ -78,11 +70,8 @@ public class StreamingLoadingOverlay extends BaseScreen {
         sb.append((int)(smoothProgress * 100)).append("%");
         progressLabel.setText(sb);
 
-        // 4. TRANSISI AMAN KE GAMEPLAY
-        // Tunggu loader selesai DAN animasi bar benar-benar penuh (karena efek lerp)
         if (loader.isDone() && smoothProgress >= 0.99f) {
             GameScreen readyScreen = loader.getReadyGameScreen();
-            // Masuk gameplay dengan fade in halus, tidak mengagetkan mata
             ScreenManager.getInstance().setScreen(readyScreen, new FadeTransition(1.5f));
         }
     }

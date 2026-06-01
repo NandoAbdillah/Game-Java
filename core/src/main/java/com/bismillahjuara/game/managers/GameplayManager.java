@@ -52,7 +52,7 @@ public class GameplayManager {
 
         long startTime = System.currentTimeMillis();
 
-        // 1. AMBIL ASET YANG SUDAH DI-LOAD (Aman anti-crash)
+        // 1. AMBIL ASET YANG SUDAH DI-LOAD
         SceneAsset playerAsset = GameAssets.getInstance().manager.get(GameAssets.PLAYER_GLB, SceneAsset.class);
         SceneAsset enemyAsset = GameAssets.getInstance().manager.get(GameAssets.ENEMY_GLB, SceneAsset.class);
 
@@ -80,15 +80,13 @@ public class GameplayManager {
         context.player.getPosition().set(centerSafePos);
         context.worldManager.playerSpawnPos.set(centerSafePos);
 
-        // ====================================================================
+
 // SPAWN RUMAH UTAMA
-// ====================================================================
+
         if (homeAsset != null) {
 
-            // Ditarik lebih jauh karena ukurannya sekarang jauh lebih besar
             Vector3 homePos = new Vector3(centerSafePos).add(0f, 0f, -40f);
 
-            // Sebelumnya 10x, sekarang 35x
             Vector3 homeScale = new Vector3(35f, 35f, 35f);
 
             EnvironmentProp home = new EnvironmentProp(
@@ -111,9 +109,7 @@ public class GameplayManager {
         }
 
 
-// ====================================================================
 // SPAWN 10 CANDI MIRING
-// ====================================================================
         if (templeAsset != null) {
 
             for (int i = 0; i < 10; i++) {
@@ -127,7 +123,6 @@ public class GameplayManager {
                     MathUtils.random(-15f, 15f)
                 );
 
-                // Sebelumnya 5x, sekarang 20x
                 Vector3 templeScale = new Vector3(
                     20f,
                     20f,
@@ -155,7 +150,6 @@ public class GameplayManager {
             }
         }
 
-        // --- FIX AAA: SPAWN 150 KUNANG-KUNANG ---
         for (int i = 0; i < 150; i++) {
             Vector3 bugPos = new Vector3();
             context.worldManager.getRandomSafePosition(bugPos);
@@ -163,9 +157,7 @@ public class GameplayManager {
             context.entityManager.addEntity(new KunangKunang(bugPos, context));
         }
 
-        // ====================================================================
         // 3. SPAWN 3 RELIK PUSAKA (Keris, Kujang, Mandau)
-        // ====================================================================
         RelicPusaka.RelicType[] relicTypes = {RelicPusaka.RelicType.KERIS, RelicPusaka.RelicType.KUJANG, RelicPusaka.RelicType.MANDAU};
         String[] relicPaths = {GameAssets.KERIS_GLB, GameAssets.KUJANG_GLB, GameAssets.MANDAU_GLB};
 
@@ -178,7 +170,6 @@ public class GameplayManager {
                 context.worldManager.getRandomSafePosition(relicPos);
                 rValid = true;
 
-                // Relic harus agak jauh dari player biar dicari
                 if (relicPos.dst(centerSafePos) < 30f) rValid = false;
                 if (rValid && context.worldManager.isColliding(relicPos, 1.0f, 1.0f)) rValid = false;
 
@@ -247,8 +238,6 @@ public class GameplayManager {
     }
 
     public void startGameplay() {
-//        context.state = GameplayState.CUTSCENE;
-//        if (onAct1Cinematic != null) onAct1Cinematic.run();
 
         context.currentAct = com.bismillahjuara.game.screens.StoryMenuScreen.DEBUG_START_ACT;
 

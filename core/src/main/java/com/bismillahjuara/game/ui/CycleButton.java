@@ -8,10 +8,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 
-/**
- * AAA Custom Widget: [ < ]  VALUE  [ > ]
- * Digunakan untuk cycle setting seperti Graphics Quality & FPS.
- */
 public class CycleButton<T extends Enum<T>> extends Table {
 
     private T[] options;
@@ -68,7 +64,7 @@ public class CycleButton<T extends Enum<T>> extends Table {
     }
 
     private void updateLabel() {
-        String text = options[currentIndex].name().replace("FPS_", ""); // Rapihkan text FPS_60 -> 60
+        String text = options[currentIndex].name().replace("FPS_", "");
         valueLabel.setText(text);
     }
 

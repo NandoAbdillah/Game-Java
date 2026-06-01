@@ -106,7 +106,6 @@ public class BijiTimunProjectile extends Entity {
             if (e instanceof SukmaGowong) {
                 SukmaGowong enemy = (SukmaGowong) e;
                 if (!enemy.isDead() && enemy.getPosition().dst(this.position) < 2.5f) {
-                    // FIX AAA: Biji Timun memberikan 50 Damage (2x kena = Mati)
                     enemy.takeDamage(50f);
                     destroy();
                     return;

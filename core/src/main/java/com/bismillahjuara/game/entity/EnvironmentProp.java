@@ -26,27 +26,22 @@ public class EnvironmentProp extends Entity {
         if (asset != null) {
             propScene = new Scene(asset.scene);
 
-            // Optimasi Material
             for (Material material : propScene.modelInstance.materials) {
                 material.remove(BlendingAttribute.Type);
                 material.set(new DepthTestAttribute(GL20.GL_LEQUAL, true));
                 material.set(IntAttribute.createCullFace(GL20.GL_BACK));
             }
 
-            // Terapkan skala dan posisi sebelum mengukur BoundingBox!
             propScene.modelInstance.transform.setToTranslation(pos)
                 .rotate(Vector3.Y, rot.y)
                 .rotate(Vector3.X, rot.x)
                 .rotate(Vector3.Z, rot.z)
                 .scale(scale.x, scale.y, scale.z);
 
-            // --- FIX AAA: MENGUKUR DAN MENDAFTARKAN COLLISION ANTI TEMBUS ---
             BoundingBox box = new BoundingBox();
             propScene.modelInstance.calculateBoundingBox(box);
-            // Kalikan dengan skala dan rotasinya agar presisi 100%
             box.mul(propScene.modelInstance.transform);
 
-            // Setor tembok ini ke WorldManager!
             context.worldManager.addCustomCollision(box);
 
             context.sceneRenderer.addScene(propScene);

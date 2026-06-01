@@ -7,14 +7,12 @@ import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
-/**
- * Memaksa OpenGL untuk mencompile shader yang berat selama layar Loading masih menyala. Mencegah FirstFrame Lag Spike
- */
+
 public class ShaderWarmup {
 
     private static SceneManager warmupSceneManager;
 
-    /** Dipanggil tepat saat loading mencapai 100%, sebelum masuk ke , main menu */
+
     public static void executeWarmup() {
 
 

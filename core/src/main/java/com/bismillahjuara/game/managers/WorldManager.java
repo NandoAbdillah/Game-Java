@@ -198,7 +198,6 @@ public class WorldManager {
         }
     }
 
-    // --- FIX AAA: METHOD UNTUK MENDAFTARKAN TEMBOK RUMAH DAN CANDI ---
     public void addCustomCollision(BoundingBox box) {
         Vector3 center = new Vector3();
         box.getCenter(center);
@@ -355,20 +354,8 @@ public class WorldManager {
         debugRenderer.end();
     }
 
-//    public void dispose() {
-//        if (mapAsset != null) mapAsset.dispose();
-//        if (debugRenderer != null) debugRenderer.dispose();
-//        spatialHash.clear();
-//        allChunks.clear();
-//        activeChunks.clear();
-//        largeObjects.clear();
-//        nodeQueue.clear();
-//    }
 
     public void dispose() {
-        // FIX AAA: JANGAN PERNAH DISPOSE mapAsset DI SINI!
-        // mapAsset adalah milik GameAssets (Singleton Cache).
-        // Jika dihancurkan di sini, RAM akan menjadi "Zombie" dan bikin C++ Crash saat main lagi!
 
         if (debugRenderer != null) debugRenderer.dispose();
         spatialHash.clear();

@@ -36,7 +36,7 @@ public class DesktopInputController extends BaseInputController {
 
         action.jumpPressed = Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
 
-        // FIX TAHAP 2: Ubah tombol serang ke Klik KIRI (Intuisi Game PC)
+
         action.attackPressed = Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
 
         action.kickPressed = Gdx.input.isKeyJustPressed(Input.Keys.R);
@@ -51,7 +51,6 @@ public class DesktopInputController extends BaseInputController {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        // FIX TAHAP 2: Geser kamera pakai Klik KANAN
         if (button == Input.Buttons.RIGHT) {
             isDragging = true;
             lastDragX = screenX;

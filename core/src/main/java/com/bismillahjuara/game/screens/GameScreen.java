@@ -81,7 +81,6 @@ public class GameScreen implements Screen {
                         @Override public void run() {
                             gameplayManager.resumeGame();
 
-                            // FIX AAA: Matikan lagu THEME dengan fade out 1 detik, lalu putar suara hutan!
                             AudioManager.getInstance().stopMusic(1f);
                             AudioManager.getInstance().playAmbient(AudioTrack.FOREST_AMBIENT);
                         }
@@ -103,7 +102,6 @@ public class GameScreen implements Screen {
                             gameplayManager.spawnButoIjo();
                             gameplayManager.resumeGame();
 
-                            // FIX AAA: Matikan suara hutan/theme, langsung ganti lagu BOSS BATTLE!
                             AudioManager.getInstance().stopMusic(1f);
                             AudioManager.getInstance().playMusic(AudioTrack.BOSS_THEME, 1f);
                         }
@@ -160,7 +158,6 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         if (gameplayManager == null) return;
 
-        // --- INTERUPSI GAME OVER (JUMPSCARE VIDEO) ---
         if (gameplayManager.getContext().state == GameplayState.GAME_OVER) {
             handleJumpscareSequence(delta);
             return;
@@ -186,15 +183,12 @@ public class GameScreen implements Screen {
     }
 
     private void handleJumpscareSequence(float delta) {
-        // 1. TRIGGER PERTAMA KALI MATI
         if (!isJumpscareTriggered) {
             isJumpscareTriggered = true;
 
-            // Matikan semua BGM dan Ambient agar tegang
             AudioManager.getInstance().stopMusic(0f);
             AudioManager.getInstance().stopAmbient();
 
-            // Sembunyikan UI dan Misi (Biar nggak nutupin jumpscare)
             hudManager.getDebugUI().hideHUD();
 
             try {
@@ -209,17 +203,15 @@ public class GameScreen implements Screen {
                 });
                 jumpscareVideo.play();
 
-                // Mainkan suara ogg-nya secara paralel
                 jumpscareAudio = Gdx.audio.newMusic(Gdx.files.internal("video/jumpscare.ogg"));
                 jumpscareAudio.play();
 
             } catch (Exception e) {
                 Gdx.app.error("JUMPSCARE", "Gagal play video jumpscare", e);
-                isVideoFinished = true; // Fallback langsung ke text jika gagal
+                isVideoFinished = true;
             }
         }
 
-        // 2. VIDEO SEDANG BERJALAN
         if (jumpscareVideo != null && !isVideoFinished) {
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -230,8 +222,6 @@ public class GameScreen implements Screen {
                 SpriteBatch batch = (SpriteBatch) hudManager.getStage().getBatch();
                 batch.begin();
 
-                // FIX AAA: Wajib reset warna batch ke Putih Solid!
-                // Kalau tidak, videonya bakal ikut transparan/hitam gara-gara sisa render UI sebelumnya!
                 batch.setColor(com.badlogic.gdx.graphics.Color.WHITE);
 
                 batch.draw(frame, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -240,7 +230,6 @@ public class GameScreen implements Screen {
         }
 
 
-        // 3. VIDEO SELESAI -> MUNCULKAN TEXT GAME OVER
         else if (isVideoFinished && !isGameOverCinematicPlaying) {
             isGameOverCinematicPlaying = true;
 
@@ -258,7 +247,6 @@ public class GameScreen implements Screen {
             );
         }
 
-        // 4. RENDER UI SAAT CINEMATIC GAME OVER
         if (isGameOverCinematicPlaying) {
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -277,24 +265,14 @@ public class GameScreen implements Screen {
     @Override public void resume() {}
     @Override public void hide()   { Gdx.input.setInputProcessor(null); }
 
-//    @Override
-//    public void dispose() {
-//        if (gameplayManager != null) gameplayManager.dispose();
-//        if (hudManager != null) hudManager.dispose();
-//        if (jumpscareVideo != null) jumpscareVideo.dispose();
-//        if (jumpscareAudio != null) jumpscareAudio.dispose();
-//    }
+
 
     @Override
     public void dispose() {
-        // FIX AAA: Biarkan ScreenManager yang mengurus memory leak antar-layar.
-        // Men-dispose manager di sini sangat berbahaya jika pemain langsung klik "Play Act 2"
-        // tanpa menutup game, karena VRAM sedang diakses oleh layar baru.
         if (hudManager != null) hudManager.dispose();
         if (jumpscareVideo != null) jumpscareVideo.dispose();
         if (jumpscareAudio != null) jumpscareAudio.dispose();
 
-        // Hapus entitas saja tanpa membunuh SceneRenderer global (Karena dipakai oleh layar Act 2)
         if (gameplayManager != null && gameplayManager.getContext() != null) {
             if (gameplayManager.getContext().entityManager != null) {
                 gameplayManager.getContext().entityManager.dispose();

@@ -34,29 +34,23 @@ import net.mgsx.gltf.scene3d.shaders.PBRDepthShaderProvider;
 import net.mgsx.gltf.scene3d.shaders.PBRShaderConfig;
 import net.mgsx.gltf.scene3d.shaders.PBRShaderProvider;
 
-// HAPUS IMPORT INI
-// import com.bismillahjuara.game.entity.SukmaGowong;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class WorldMap {
-    // --- LAMA (Untuk objek dummy) ---
     private ModelBatch modelBatch;
     private Environment environment;
     private Array<ModelInstance> worldInstances = new Array<>();
     private List<Model> worldModels = new ArrayList<>();
 
-    // --- BARU (Untuk Map.glb) ---
+
     private SceneManager sceneManager;
     private SceneAsset mapAsset;
     private Scene mapScene;
 
-    // HAPUS ARRAY MUSUH INI KARENA SUDAH DIURUS ENTITY MANAGER
-    // private Array<SukmaGowong> enemies = new Array<>();
 
     public WorldMap() {
-        // 1. SETUP MODEL BATCH (Untuk box/pohon dummy lama)
         modelBatch = new ModelBatch();
 
         environment = new Environment();
@@ -64,20 +58,14 @@ public class WorldMap {
         environment.add(new DirectionalLight().set(1.0f, 0.95f, 0.85f, -1f, -1f, -0.4f));
         environment.add(new DirectionalLight().set(0.2f, 0.22f, 0.25f,  0.5f, 0.5f, 0.2f));
 
-        buildWorld(); // Logika dummy lama tetap dieksekusi!
+        buildWorld();
 
-        // HAPUS PEMANGGILAN SPAWN MUSUH
-        // spawnEnemies();
     }
 
-    // HAPUS METHOD spawnEnemies() DAN updateEnemies() KESELURUHAN
-    // private void spawnEnemies() { ... }
-    // public void updateEnemies(float delta, Vector3 playerPosition) { ... }
 
     private void setupGLTFMap() {
-        // Konfigurasi PBR Shader anti-crash
         PBRShaderConfig config = PBRShaderProvider.createDefaultConfig();
-        config.numBones = 60; // Berjaga-jaga jika map punya animasi (misal: kincir angin)
+        config.numBones = 60;
 
         DepthShader.Config depthConfig = PBRShaderProvider.createDefaultDepthConfig();
         depthConfig.numBones = 60;
@@ -87,7 +75,6 @@ public class WorldMap {
             new PBRDepthShaderProvider(depthConfig)
         );
 
-        // Pencahayaan untuk Map GLTF
         sceneManager.setAmbientLight(0.45f);
         DirectionalLightEx sunLight = new DirectionalLightEx();
         sunLight.direction.set(-1f, -1f, -0.4f).nor();
@@ -95,8 +82,6 @@ public class WorldMap {
         sunLight.intensity = 1.5f;
         sceneManager.environment.add(sunLight);
 
-        // LOAD FILE Map.glb
-        // PASTIKAN NAMA DAN FOLDERNYA BENAR! (Misal: ada di android/assets/models/Map.glb)
         mapAsset = new GLBLoader().load(Gdx.files.internal("models/maps/Map.glb"));
         mapScene = new Scene(mapAsset.scene);
 
@@ -106,7 +91,6 @@ public class WorldMap {
     private void buildWorld() {
         ModelBuilder mb = new ModelBuilder();
 
-        // --- GROUND TILES ---
         int tilesX = 20, tilesZ = 20;
         float tileSize = 5f;
         Color[] grassColors = {
@@ -128,7 +112,6 @@ public class WorldMap {
             }
         }
 
-        // --- BORDER WALLS (batu di tepi) ---
         float mapHalf = tilesX / 2f * tileSize;
         Color stoneColor = new Color(0.5f, 0.48f, 0.45f, 1f);
         addBorderWall(mb, stoneColor, -mapHalf, 0, 0,          0.5f, 3f, mapHalf * 2f); // kiri
@@ -136,16 +119,15 @@ public class WorldMap {
         addBorderWall(mb, stoneColor, 0, 0, -mapHalf,          mapHalf * 2f, 3f, 0.5f); // atas
         addBorderWall(mb, stoneColor, 0, 0,  mapHalf,          mapHalf * 2f, 3f, 0.5f); // bawah
 
-        // --- OBSTACLE BOXES (batu-batuan / peti) ---
         int[][] obstaclePositions = {
             { 3, 3}, {-5, 7}, {8, -4}, {-8, -6}, {12, 2},
             {-12, 5}, {5, -10}, {-3, -12}, {10, 10}, {-10, -10},
             {6, 8}, {-7, -3}, {15, -5}, {-15, 8}
         };
         Color[] boxColors = {
-            new Color(0.65f, 0.50f, 0.35f, 1f), // kayu coklat
-            new Color(0.55f, 0.55f, 0.55f, 1f), // batu abu
-            new Color(0.70f, 0.60f, 0.40f, 1f), // pasir
+            new Color(0.65f, 0.50f, 0.35f, 1f),
+            new Color(0.55f, 0.55f, 0.55f, 1f),
+            new Color(0.70f, 0.60f, 0.40f, 1f),
         };
         for (int[] pos : obstaclePositions) {
             float sz = 1.5f + MathUtils.random(0.5f, 1.5f);
@@ -160,7 +142,6 @@ public class WorldMap {
             worldInstances.add(bi);
         }
 
-        // --- POHON PLACEHOLDER (silinder batang + sphere daun) ---
         int[][] treePositions = {
             {4, -3}, {-6, 4}, {9, 7}, {-9, -7}, {2, 12},
             {-2, -13}, {13, -8}, {-13, 9}
@@ -178,7 +159,7 @@ public class WorldMap {
             trunkI.transform.setToTranslation(tx, 1.5f, tz);
             worldInstances.add(trunkI);
 
-            // Daun (sphere)
+            // Daun
             Model leaf = mb.createSphere(3f, 3f, 3f, 12, 8,
                 new Material(ColorAttribute.createDiffuse(new Color(0.2f, 0.6f, 0.15f, 1f))),
                 Usage.Position | Usage.Normal);
@@ -218,10 +199,6 @@ public class WorldMap {
         }
         modelBatch.end();
 
-        // HAPUS RENDER MUSUH LAMA INI
-        // for (SukmaGowong enemy : enemies) {
-        //     enemy.render(cam);
-        // }
     }
 
     public void dispose() {
@@ -229,13 +206,8 @@ public class WorldMap {
         for (Model m : worldModels) { if (m != null) m.dispose(); }
         worldModels.clear();
 
-        // Buang memori GLTF
         if (sceneManager != null) sceneManager.dispose();
         if (mapAsset != null) mapAsset.dispose();
 
-        // HAPUS DISPOSE MUSUH LAMA
-        // for (SukmaGowong enemy : enemies) {
-        //     enemy.dispose();
-        // }
     }
 }

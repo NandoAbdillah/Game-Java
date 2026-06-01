@@ -4,16 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics.DisplayMode;
 import com.bismillahjuara.game.input.GameInputHandler;
 
-/**
- * High-level Settings Architect.
- * Membaca, menyimpan, dan MENGAPLIKASIKAN setting grafis/audio ke Engine.
- */
 public class SettingsManager {
 
     private static SettingsManager instance;
     private SavePreferenceSystem saveSystem;
 
-    // --- ENUMS ---
     public enum GraphicsQuality { LOW, MEDIUM, HIGH, ULTRA }
     public enum FPSLimit {
         FPS_30(30), FPS_60(60), FPS_90(90), FPS_120(120), UNLIMITED(0);
@@ -21,13 +16,11 @@ public class SettingsManager {
         FPSLimit(int value) { this.value = value; }
     }
 
-    // --- CACHED SETTINGS ---
     public boolean fullscreen;
     public boolean vsync;
     public FPSLimit fpsLimit;
     public GraphicsQuality graphicsPreset;
 
-    // --- AAA AUDIO BUSES ---
     public float masterVolume;
     public float musicVolume;
     public float ambientVolume;
@@ -58,7 +51,6 @@ public class SettingsManager {
             fpsLimit = FPSLimit.valueOf(saveSystem.getString("fpsLimit", "FPS_60"));
             graphicsPreset = GraphicsQuality.valueOf(saveSystem.getString("graphicsPreset", "HIGH"));
         } catch (Exception e) {
-            // Failsafe jika data harddisk corrupt
             fpsLimit = FPSLimit.FPS_60;
             graphicsPreset = GraphicsQuality.HIGH;
         }
@@ -92,10 +84,8 @@ public class SettingsManager {
             Gdx.graphics.setVSync(vsync);
         }
 
-        // 2. FPS LIMIT (Berlaku di PC & Mobile)
         Gdx.graphics.setForegroundFPS(fpsLimit.value);
 
-        // REAL-TIME AUDIO UPDATE
         com.bismillahjuara.game.audio.AudioManager.getInstance().refreshRuntimeVolumes();
     }
 }

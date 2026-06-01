@@ -12,10 +12,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Touchpad.TouchpadStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
-/**
- * Menyimpan dan membuat aset visual HUD.
- * Diperbarui: Joystick 2x lipat lebih besar & Button Styles untuk Mobile.
- */
 public class HudAssets {
     public final Skin skin;
     public final BitmapFont defaultFont;
@@ -36,7 +32,7 @@ public class HudAssets {
     public HudAssets() {
         skin = new Skin();
         defaultFont = new BitmapFont();
-        defaultFont.getData().setScale(1.5f); // Perbesar ukuran font agar terbaca di tombol
+        defaultFont.getData().setScale(1.5f);
         skin.add("default", defaultFont);
 
         createTouchpadStyle();
@@ -46,7 +42,6 @@ public class HudAssets {
 
     private void loadPauseAssets() {
         try {
-            // Matikan filter blur agar pixel-perfect
             pauseTitleTex = loadTex("ui/pausemenu/PAUSE TITLE.png");
             resumeTex = loadTex("ui/pausemenu/RESUME.png");
             settingsTex = loadTex("ui/pausemenu/SETTINGS BUTTON.png");
@@ -65,7 +60,7 @@ public class HudAssets {
     }
 
     private void createTouchpadStyle() {
-        // 1. Background Joystick 2X LEBIH BESAR (400x400)
+
         Pixmap bgPixmap = new Pixmap(400, 400, Pixmap.Format.RGBA8888);
         bgPixmap.setColor(1f, 1f, 1f, 0.15f);
         bgPixmap.fillCircle(200, 200, 200);
@@ -73,7 +68,7 @@ public class HudAssets {
         bgPixmap.dispose();
         Drawable touchBg = new TextureRegionDrawable(new TextureRegion(touchpadBgTex));
 
-        // 2. Knob/Analog Joystick (120x120)
+
         Pixmap knobPixmap = new Pixmap(120, 120, Pixmap.Format.RGBA8888);
         knobPixmap.setColor(1f, 1f, 1f, 0.7f);
         knobPixmap.fillCircle(60, 60, 60);
@@ -88,7 +83,7 @@ public class HudAssets {
     }
 
     private void createButtonStyle() {
-        // Tombol saat diam (Lingkaran Abu-abu Transparan)
+
         Pixmap btnPixmap = new Pixmap(150, 150, Pixmap.Format.RGBA8888);
         btnPixmap.setColor(0.2f, 0.2f, 0.2f, 0.6f);
         btnPixmap.fillCircle(75, 75, 75);
@@ -96,7 +91,6 @@ public class HudAssets {
         btnPixmap.dispose();
         Drawable btnUp = new TextureRegionDrawable(new TextureRegion(buttonBgTex));
 
-        // Tombol saat ditekan (Lingkaran Putih Transparan)
         Pixmap btnDownPixmap = new Pixmap(150, 150, Pixmap.Format.RGBA8888);
         btnDownPixmap.setColor(0.8f, 0.8f, 0.8f, 0.8f);
         btnDownPixmap.fillCircle(75, 75, 75);

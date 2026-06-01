@@ -40,7 +40,7 @@ public class SukmaGowong extends Entity {
     private PointLightEx auraLight;
     private Color glowColor = new Color(0.8f, 0.5f, 0.1f, 1f);
 
-    // --- FIX AAA: Audio Looper System ---
+
     private float sukmaVoiceTimer = 0f;
 
     public SukmaGowong(Vector3 startPos, GameContext context, SceneAsset asset) {
@@ -147,11 +147,9 @@ public class SukmaGowong extends Entity {
     }
 
     private void handleAILogic(float dist, float dirX, float dirZ, float delta) {
-        // --- FIX AAA: LOOP SUARA SUKMA SAAT MENGEJAR ---
         if (currentState == State.CRAWL || currentState == State.RUN || currentState == State.MELEE) {
             sukmaVoiceTimer -= delta;
             if (sukmaVoiceTimer <= 0) {
-                // Play random voice dan reset timer 4-6 detik
                 context.audio.playSFX(MathUtils.randomBoolean() ? AudioSFX.SUKMA_01 : AudioSFX.SUKMA_02);
                 sukmaVoiceTimer = MathUtils.random(4.0f, 6.0f);
             }
@@ -176,7 +174,6 @@ public class SukmaGowong extends Entity {
             case MELEE:
                 context.player.takeDamage(delta * 15f);
                 stateTimer += delta;
-                // FIX AAA: Kalau udah selesai 4 detik mukul, jangan MATI! Tapi istirahat bentar (IDLE).
                 if (stateTimer >= meleeDurationLimit) changeState(State.IDLE);
                 else if (dist > meleeRadius) changeState(State.RUN);
                 break;

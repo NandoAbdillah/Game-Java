@@ -3,10 +3,6 @@ package com.bismillahjuara.game.settings;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 
-/**
- * Low-level Data Storage.
- * Menggunakan LibGDX Preferences (SharedPreferences di Android, XML di Desktop).
- */
 public class SavePreferenceSystem {
     private static final String PREF_NAME = "BismillahJuara_Settings";
     private Preferences prefs;
@@ -28,6 +24,6 @@ public class SavePreferenceSystem {
     public String getString(String key, String def) { return prefs.getString(key, def); }
 
     public void flush() {
-        prefs.flush(); // WAJIB dipanggil agar data benar-benar tersimpan ke disk!
+        prefs.flush();
     }
 }

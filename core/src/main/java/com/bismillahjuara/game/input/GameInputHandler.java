@@ -13,7 +13,6 @@ public class GameInputHandler implements InputProcessor {
 
     private BaseInputController activeController;
 
-    // enerima AdvancedCameraSystem
     public GameInputHandler(AdvancedCameraSystem camera, HudManager hudManager) {
         if (IS_MOBILE) {
             activeController = new MobileInputController(camera, hudManager);

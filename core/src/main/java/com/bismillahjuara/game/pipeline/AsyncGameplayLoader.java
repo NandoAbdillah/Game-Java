@@ -10,7 +10,7 @@ public class AsyncGameplayLoader {
         QUEUE_ASSETS,
         WAIT_ASSETS,
         INIT_SHADERS,
-        INIT_WORLD_BUILD_SCENE, // Load Disk dibuang, langsung Build Scene
+        INIT_WORLD_BUILD_SCENE,
         INIT_WORLD_SCAN_NODES,
         INIT_ENTITIES,
         INIT_UI,
@@ -36,7 +36,6 @@ public class AsyncGameplayLoader {
                 break;
 
             case WAIT_ASSETS:
-                // Ini akan membaca Map, Player, Enemy, dan Audio di latar belakang tanpa Freeze!
                 if (GameAssets.getInstance().manager.update()) {
                     progress = 0.4f;
                     currentState = LoadState.INIT_SHADERS;
@@ -48,13 +47,11 @@ public class AsyncGameplayLoader {
             case INIT_SHADERS:
                 com.bismillahjuara.game.assets.ShaderWarmup.executeWarmup();
                 progress = 0.5f;
-                // Siapkan kerangka manager utama
                 targetScreen.getGameplayManager().buildWorldCore();
                 currentState = LoadState.INIT_WORLD_BUILD_SCENE;
                 break;
 
             case INIT_WORLD_BUILD_SCENE:
-                // Mengambil Map dari cache, membangun scene 22k nodes (Masih butuh beberapa detik, tapi tanpa I/O)
                 targetScreen.getGameplayManager().getContext().worldManager.step2_BuildSceneAndQueue(
                     targetScreen.getGameplayManager().getContext().sceneRenderer
                 );
@@ -73,7 +70,7 @@ public class AsyncGameplayLoader {
 
             case INIT_ENTITIES:
                 targetScreen.initCamera();
-                targetScreen.initEntities(); // SEKARANG CUMA BUTUH < 50ms !!!
+                targetScreen.initEntities();
                 progress = 0.9f;
                 currentState = LoadState.INIT_UI;
                 break;

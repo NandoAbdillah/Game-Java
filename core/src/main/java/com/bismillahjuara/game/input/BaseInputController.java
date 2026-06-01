@@ -4,7 +4,7 @@ import com.badlogic.gdx.InputAdapter;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 
 public abstract class BaseInputController extends InputAdapter {
-    protected AdvancedCameraSystem camera; // FIX: Gunakan kamera modern
+    protected AdvancedCameraSystem camera;
     protected InputAction action;
 
     public BaseInputController(AdvancedCameraSystem camera) {

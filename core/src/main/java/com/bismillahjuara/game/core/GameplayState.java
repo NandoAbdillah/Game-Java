@@ -1,9 +1,5 @@
 package com.bismillahjuara.game.core;
 
-/**
- * Mendefinisikan status game saat ini.
- * Sangat penting untuk menghentikan update Physics saat game di-pause atau cutscene.
- */
 public enum GameplayState {
     INITIALIZING, // Sedang load/build oleh AsyncLoader
     PLAYING,      // normal gameplay

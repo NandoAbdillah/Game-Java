@@ -20,7 +20,6 @@ public class CreditsScreen extends BaseScreen {
 
     private Table scrollTable;
 
-    // FIX AAA: Durasi digandakan menjadi 300 detik (5 Menit) agar super lambat dan sinematik!
     private float scrollDuration = 150f;
 
     public CreditsScreen() {
@@ -35,30 +34,25 @@ public class CreditsScreen extends BaseScreen {
 
     private void buildCreditsContent() {
         scrollTable = new Table();
-        scrollTable.setWidth(1920); // Paksa selebar layar virtual
+        scrollTable.setWidth(1920);
 
-        // --- GAYA TEKS (STYLING) ---
         Label.LabelStyle titleStyle = new Label.LabelStyle(FontManager.getInstance().getTitleFont(), Color.GOLD);
         Label.LabelStyle subtitleStyle = new Label.LabelStyle(FontManager.getInstance().getBodyFont(), Color.ORANGE);
-        Label.LabelStyle roleStyle = new Label.LabelStyle(FontManager.getInstance().getBodyFont(), new Color(0.7f, 0.7f, 0.7f, 1f)); // Abu-abu
+        Label.LabelStyle roleStyle = new Label.LabelStyle(FontManager.getInstance().getBodyFont(), new Color(0.7f, 0.7f, 0.7f, 1f));
         Label.LabelStyle nameStyle = new Label.LabelStyle(FontManager.getInstance().getBodyFont(), Color.WHITE);
         Label.LabelStyle quoteStyle = new Label.LabelStyle(FontManager.getInstance().getBodyFont(), Color.CYAN);
 
         addBigSpace();
         addBigSpace();
 
-        // ==========================================
-        // OPENING / TITLE CARD
-        // ==========================================
+
         addTitle(titleStyle, "SUKMA GOWONG");
         addSingleColumn(roleStyle, "A Game Project by\nTim Sukma Gowong");
         addSpace();
         addQuote(quoteStyle, "\"Di balik setiap baris kode, terdapat error yang menunggu untuk ditemukan.\"");
         addBigSpace();
 
-        // ==========================================
-        // CAST
-        // ==========================================
+
         addTitle(titleStyle, "CAST");
         addDoubleColumn(roleStyle, "Timun Mas", nameStyle, "Shinta Nur'aini Dwi");
         addDoubleColumn(roleStyle, "Sukma Gowong", nameStyle, "Rehil Azrilla Multajabah");
@@ -67,9 +61,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"Mereka bilang game horror itu seram, sampai kamu melihat file project-nya.\"");
         addBigSpace();
 
-        // ==========================================
-        // PRODUCTION & MANAGEMENT
-        // ==========================================
+
         addTitle(titleStyle, "PRODUCTION & MANAGEMENT");
         addDoubleColumn(roleStyle, "Project Manager", nameStyle, "Nando Abdillah Salam");
         addDoubleColumn(roleStyle, "Coffee Procurer", nameStyle, "Nando Abdillah Salam");
@@ -77,9 +69,7 @@ public class CreditsScreen extends BaseScreen {
         addDoubleColumn(roleStyle, "Mental Breakdown Survivor", nameStyle, "Seluruh Tim");
         addSpace();
 
-        // ==========================================
-        // DESIGN & NARRATIVE
-        // ==========================================
+
         addTitle(titleStyle, "DESIGN & NARRATIVE");
         addDoubleColumn(roleStyle, "Lead Game Designer", nameStyle, "Nando Abdillah Salam");
         addDoubleColumn(roleStyle, "Gameplay Designer", nameStyle, "M. Naufal Wicaksono");
@@ -90,9 +80,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"Kalau playernya tidak kaget, tambahkan saja volume audionya sampai 200%.\"");
         addBigSpace();
 
-        // ==========================================
-        // PROGRAMMING & TECHNICAL
-        // ==========================================
+
         addTitle(titleStyle, "PROGRAMMING & TECHNICAL");
         addDoubleColumn(roleStyle, "Core Programmer", nameStyle, "M. Naufal Wicaksono");
         addDoubleColumn(roleStyle, "Gameplay Programmer", nameStyle, "Nando Abdillah Salam");
@@ -107,9 +95,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"99% coding adalah mencari bug.\n1% sisanya adalah membuat bug baru saat mencoba memperbaiki bug lama.\"");
         addBigSpace();
 
-        // ==========================================
-        // ART & VISUAL
-        // ==========================================
+
         addTitle(titleStyle, "ART & VISUAL");
         addDoubleColumn(roleStyle, "3D Modeling", nameStyle, "Shinta Nur'aini Dwi");
         addDoubleColumn(roleStyle, "Texture Artist", nameStyle, "Rehil Azrilla Multajabah");
@@ -121,9 +107,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"Ketika model 3D terlihat sempurna di Blender,\ntetapi hancur berantakan saat di-import ke game.\"\n— Pengalaman spiritual seluruh developer 3D");
         addBigSpace();
 
-        // ==========================================
-        // AUDIO DEPARTMENT
-        // ==========================================
+
         addTitle(titleStyle, "AUDIO DEPARTMENT");
         addDoubleColumn(roleStyle, "Music Composer", nameStyle, "Rehil Azrilla Multajabah");
         addDoubleColumn(roleStyle, "Sound Designer (SFX)", nameStyle, "Rehil Azrilla Multajabah");
@@ -132,9 +116,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"Kadang suara yang paling menyeramkan bukanlah hantu...\nmelainkan speaker yang tiba-tiba mengeluarkan noise saat demo ke Dosen.\"");
         addBigSpace();
 
-        // ==========================================
-        // QUALITY ASSURANCE
-        // ==========================================
+
         addTitle(titleStyle, "QUALITY ASSURANCE");
         addDoubleColumn(roleStyle, "Chief Bug Finder", nameStyle, "Shinta Nur'aini Dwi");
         addDoubleColumn(roleStyle, "Game Testing Team", nameStyle, "Nando Abdillah Salam\nM. Naufal Wicaksono\nRehil Azrilla Multajabah");
@@ -142,9 +124,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"Terima kasih kepada seluruh tester yang rela menjadi korban jatuh ke dalam jurang \nglitched geometry sebelum pemain mengalaminya.\"");
         addBigSpace();
 
-        // ==========================================
-        // TECHNOLOGY STACK
-        // ==========================================
+
         addTitle(titleStyle, "TECHNOLOGY STACK");
         addSubtitle(subtitleStyle, "Development");
         addSingleColumn(nameStyle, "Android Studio\nJava");
@@ -164,9 +144,7 @@ public class CreditsScreen extends BaseScreen {
         addQuote(quoteStyle, "\"Powered by air putih, doa ibu, dan Stack Overflow.\"");
         addBigSpace();
 
-        // ==========================================
-        // DEVELOPMENT FACTS
-        // ==========================================
+
         addTitle(titleStyle, "DEVELOPMENT FACTS");
         addDoubleColumn(roleStyle, "Jumlah build gagal", nameStyle, "Tidak dihitung demi kesehatan mental tim");
         addDoubleColumn(roleStyle, "Jumlah \"Ini pasti gampang kok\"", nameStyle, "Tak terhingga");
@@ -175,9 +153,7 @@ public class CreditsScreen extends BaseScreen {
         addDoubleColumn(roleStyle, "Jumlah error yang hilang sendiri", nameStyle, "Fenomena supranatural yang tidak bisa dijelaskan");
         addBigSpace();
 
-        // ==========================================
-        // SPECIAL THANKS
-        // ==========================================
+
         addTitle(titleStyle, "SPECIAL THANKS");
         addSpace();
 
@@ -206,9 +182,6 @@ public class CreditsScreen extends BaseScreen {
         addSingleColumn(roleStyle, "Terima kasih karena tetap bertahan walaupun koneksi internet\nkami tidak selalu memiliki komitmen yang sama.");
         addBigSpace();
 
-        // ==========================================
-        // IN MEMORY OF BUGS
-        // ==========================================
         addTitle(titleStyle, "IN MEMORY OF");
         addSingleColumn(roleStyle, "Semua bug yang berhasil diperbaiki...");
         addSpace();
@@ -217,9 +190,7 @@ public class CreditsScreen extends BaseScreen {
         addSingleColumn(nameStyle, "Semua bug yang belum ditemukan.");
         addBigSpace();
 
-        // ==========================================
-        // FINAL MESSAGE
-        // ==========================================
+
         addTitle(titleStyle, "FINAL MESSAGE");
         addSingleColumn(roleStyle, "Terima kasih telah menemani perjalanan Timun Mas.\nGame ini dibuat dari kombinasi kerja keras, pembelajaran, revisi tanpa akhir,\ndan keyakinan penuh bahwa tombol Run suatu hari akan menghasilkan Build Successful.");
         addSpace();
@@ -237,14 +208,11 @@ public class CreditsScreen extends BaseScreen {
         addBigSpace();
         addBigSpace();
 
-        // Hitung total tinggi teks untuk keperluan kalkulasi scrolling panjang
         scrollTable.pack();
         stage.addActor(scrollTable);
     }
 
-    // ==========================================
-    // HELPER LAYOUTING (2 COLUMN SYSTEM AAA)
-    // ==========================================
+
 
     private void addTitle(Label.LabelStyle style, String text) {
         Label l = new Label(text, style);
@@ -265,17 +233,17 @@ public class CreditsScreen extends BaseScreen {
     }
 
     private void addDoubleColumn(Label.LabelStyle roleStyle, String roleText, Label.LabelStyle nameStyle, String nameText) {
-        // Kolom Kiri: Role (Rata Kanan)
+
         Label lblRole = new Label(roleText, roleStyle);
         lblRole.setAlignment(Align.right);
         lblRole.setWrap(true);
 
-        // Kolom Kanan: Nama (Rata Kiri)
+
         Label lblName = new Label(nameText, nameStyle);
         lblName.setAlignment(Align.left);
         lblName.setWrap(true);
 
-        // Lebar layar 1920. Kita bagi dua (960). Kurangi sedikit margin biar gak nabrak tengah.
+
         float colWidth = 850f;
         scrollTable.add(lblRole).width(colWidth).right().padRight(30).padBottom(15);
         scrollTable.add(lblName).width(colWidth).left().padLeft(30).padBottom(15).row();
@@ -295,20 +263,15 @@ public class CreditsScreen extends BaseScreen {
         scrollTable.add().colspan(2).height(150).row();
     }
 
-    // ==========================================
-    // ANIMATION & LOGIC
-    // ==========================================
+
 
     private void startScrolling() {
-        // Posisi awal: Table disembunyikan jauh di bawah layar
         float startY = -scrollTable.getHeight() / 2f - 200f;
-        // Posisi akhir: Table digulung sampai jauh ke atas melewati batas atas layar
         float endY = 1080f + (scrollTable.getHeight() / 2f) + 200f;
 
         scrollTable.setPosition(1920 / 2f, startY, Align.center);
 
         scrollTable.addAction(Actions.sequence(
-            // Interpolation linear agar kecepatannya konstan dari awal sampai akhir
             Actions.moveToAligned(1920 / 2f, endY, Align.center, scrollDuration, Interpolation.linear),
             Actions.run(new Runnable() {
                 @Override
@@ -354,7 +317,7 @@ public class CreditsScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.02f, 0.02f, 0.03f, 1f); // Background bioskop super gelap
+        Gdx.gl.glClearColor(0.02f, 0.02f, 0.03f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         stage.act(delta);

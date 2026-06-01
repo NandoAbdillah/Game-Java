@@ -69,10 +69,9 @@ public class StoryMenuScreen extends BaseScreen {
     }
 
     private void setupBackground() {
-        // Coba load loading.jpeg atau loading.png
         try {
             FileHandle bgFile = Gdx.files.internal("ui/loading.jpeg");
-            if (!bgFile.exists()) bgFile = Gdx.files.internal("ui/loading.png"); // Fallback png
+            if (!bgFile.exists()) bgFile = Gdx.files.internal("ui/loading.png");
 
             if (bgFile.exists()) {
                 bgImageTex = new Texture(bgFile);
@@ -86,7 +85,6 @@ public class StoryMenuScreen extends BaseScreen {
             Gdx.app.error("STORY_LOG", "Gambar background tidak ditemukan.");
         }
 
-        // Overlay Hitam Transparan (85% gelap agar teks sangat terbaca)
         Pixmap overlayPix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         overlayPix.setColor(0f, 0f, 0f, 0.85f);
         overlayPix.fill();
@@ -109,9 +107,8 @@ public class StoryMenuScreen extends BaseScreen {
         btnStyle.overFontColor = Color.WHITE;
         btnStyle.downFontColor = Color.DARK_GRAY;
 
-        // --- CONTENT AREA (Tengah Layar) ---
         contentTable = new Table();
-        contentTable.setTransform(true); // Wajib true agar efek Scale (Burn) berfungsi
+        contentTable.setTransform(true);
         contentTable.setOrigin(Align.center);
 
         titleLabel = new Label("", titleStyle);
@@ -125,7 +122,6 @@ public class StoryMenuScreen extends BaseScreen {
         contentTable.add(titleLabel).padBottom(40).row();
         contentTable.add(descLabel).width(1000).center();
 
-        // --- NAVIGATION AREA (Bawah Layar) ---
         Table navTable = new Table();
 
         btnPrev = new TextButton("< PREV", btnStyle);
@@ -133,7 +129,6 @@ public class StoryMenuScreen extends BaseScreen {
         btnPlay = new TextButton("[ PLAY THIS ACT ]", btnStyle);
         btnReturn = new TextButton("RETURN TO MENU", btnStyle);
 
-        // Hover Effect untuk tombol Play
         btnPlay.addListener(new ClickListener() {
             @Override public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
                 btnPlay.clearActions();
@@ -173,13 +168,11 @@ public class StoryMenuScreen extends BaseScreen {
 
     private void changeSlide(int direction) {
         int nextSlide = currentSlide + direction;
-        // Cegah out of bounds
         if (nextSlide < 0 || nextSlide >= slides.length) return;
 
         currentSlide = nextSlide;
 
         // --- EFEK BURN TRANSITION AAA ---
-        // Teks membesar 1.2x dan memudar cepat (abu), lalu teks diganti, lalu mengecil 1.0x dan terang lagi
         contentTable.clearActions();
         contentTable.addAction(Actions.sequence(
             Actions.parallel(
@@ -213,11 +206,9 @@ public class StoryMenuScreen extends BaseScreen {
     private void playSelectedAct() {
         StorySlide slide = slides[currentSlide];
         if (slide.canPlay) {
-            // SET DEBUG START ACT!
             DEBUG_START_ACT = slide.actNumber;
             Gdx.app.log("STORY_LOG", "Starting game at ACT: " + DEBUG_START_ACT);
 
-            // Langsung lempar ke Loading Screen Gameplay
             ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), new FadeTransition(1.0f));
         }
     }

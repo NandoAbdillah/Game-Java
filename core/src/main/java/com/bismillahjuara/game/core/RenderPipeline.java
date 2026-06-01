@@ -3,9 +3,6 @@ package com.bismillahjuara.game.core;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 
-/**
- * Pembuat visual Game hanya bertugas menggambar, tidak boleh ada perhitungan logic di sini.
- */
 public class RenderPipeline {
 
     private GameContext context;
@@ -25,19 +22,15 @@ public class RenderPipeline {
 
         // Render Dunia 3D & Entitas
         if (context.camera != null) {
-            // SceneRenderer akan menggambar Map, Musuh, dan Player yang sudah didaftarkan
             sceneRenderer.render(context.camera.getCam(), delta);
         }
 
-        // TODO: Render VFX Particle System di atas 3D Model
 
         // Render Debug
-        // TODO: Buat class DebugRenderer untuk menggambar bounding box (Hitbox) collision
 
         if (context.camera != null) {
             sceneRenderer.render(context.camera.getCam(), delta);
 
-            // ---> TAMBAHKAN BARIS INI DI SINI <---
             context.worldManager.renderDebug(context.camera.getCam());
         }
     }

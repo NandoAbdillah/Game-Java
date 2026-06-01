@@ -28,7 +28,6 @@ public class RelicPusaka extends Entity {
     private Color baseGlowColor;
     private Color currentGlowColor = new Color();
 
-    // --- SKALA MODEL GLB (UBAH ANGKA INI JIKA TERLALU KECIL/BESAR) ---
     public float scale = 2.5f;
 
     public RelicPusaka(Vector3 startPos, GameContext context, SceneAsset asset, RelicType type) {
@@ -36,7 +35,6 @@ public class RelicPusaka extends Entity {
         this.basePos = new Vector3(startPos);
         this.type = type;
 
-        // Tetapkan warna mistis berdasarkan tipe senjata
         switch (type) {
             case KERIS:  baseGlowColor = new Color(1.0f, 0.8f, 0.1f, 1f); break; // Kuning Emas
             case KUJANG: baseGlowColor = new Color(0.2f, 1.0f, 0.4f, 1f); break; // Hijau Mistis
@@ -51,7 +49,6 @@ public class RelicPusaka extends Entity {
                 material.set(new DepthTestAttribute(GL20.GL_LEQUAL, true));
                 material.set(IntAttribute.createCullFace(GL20.GL_BACK));
 
-                // Pastikan material punya atribut Emissive untuk di-glow
                 if (!material.has(ColorAttribute.Emissive)) {
                     material.set(ColorAttribute.createEmissive(Color.BLACK));
                 }
@@ -64,7 +61,7 @@ public class RelicPusaka extends Entity {
     public void update(float delta) {
         if (scene == null) return;
 
-        // 1. ANIMASI FLOATING (Naik Turun) & ROTATING
+
         yaw += 60f * delta;
         floatTimer += delta;
         float floatY = basePos.y + 1.0f + (MathUtils.sin(floatTimer * 2f) * 0.2f);
@@ -73,21 +70,21 @@ public class RelicPusaka extends Entity {
             .rotate(Vector3.Y, yaw)
             .scale(scale, scale, scale);
 
-        // 2. ANIMASI BLINKING & PROXIMITY GLOW
+
         float distToPlayer = position.dst(context.player.getPosition());
 
-        // Blink statis: naik turun pelan (0.5 hingga 1.0)
+
         float glowIntensity = 0.5f + (Math.abs(MathUtils.sin(floatTimer * 3f)) * 0.5f);
 
-        // Proximity: Jika jarak < 10m, semakin dekat semakin bersinar!
+
         if (distToPlayer < 10f) {
             float proximityFactor = 1.0f - (distToPlayer / 10f); // 0 (jauh) -> 1 (nempel)
-            glowIntensity += (proximityFactor * 2.0f); // Tambah intensitas hingga 2x lipat
+            glowIntensity += (proximityFactor * 2.0f);
         }
 
-        // Terapkan intensitas ke warna
+
         currentGlowColor.set(baseGlowColor).mul(glowIntensity);
-        currentGlowColor.a = 1f; // Jaga alpha tetap utuh
+        currentGlowColor.a = 1f;
 
         for (Material mat : scene.modelInstance.materials) {
             ColorAttribute emissive = (ColorAttribute) mat.get(ColorAttribute.Emissive);
@@ -96,7 +93,7 @@ public class RelicPusaka extends Entity {
             }
         }
 
-        // 3. LOGIKA COLLECT (Jarak < 2 Meter)
+
         if (distToPlayer < 2.0f) {
             context.relicsCollected++;
             context.audio.playSFX(AudioSFX.ENV_CHEST);

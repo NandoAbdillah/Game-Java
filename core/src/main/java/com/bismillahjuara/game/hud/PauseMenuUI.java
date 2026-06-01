@@ -13,10 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.bismillahjuara.game.ui.AnimatedImageButton;
 
-/**
- * AAA Production Pause Menu.
- * Menangani state visual Resume, Settings Overlay, dan Confirmation.
- */
+
 public class PauseMenuUI {
 
     private Table rootTable;
@@ -34,9 +31,8 @@ public class PauseMenuUI {
     public PauseMenuUI(HudAssets assets) {
         rootTable = new Table();
         rootTable.setFillParent(true);
-        rootTable.setVisible(false); // Sembunyikan secara default
+        rootTable.setVisible(false);
 
-        // 1. Buat Dark Overlay Background (Hitam transparan 75%)
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(0f, 0f, 0f, 0.75f);
         pixmap.fill();
@@ -47,12 +43,11 @@ public class PauseMenuUI {
         bgImage.setFillParent(true);
         rootTable.addActor(bgImage);
 
-        // 2. Setup Struktur Menu
         setupMainButtons(assets);
         setupConfirmDialog(assets);
         setupSettingsOverlay(assets);
 
-        showMainMenu(); // Tampilkan tombol utama, sembunyikan dialog
+        showMainMenu();
     }
 
     private void setupMainButtons(HudAssets assets) {
@@ -100,7 +95,6 @@ public class PauseMenuUI {
             AnimatedImageButton btn = new AnimatedImageButton(assets.closeGameTex);
             btn.addListener(new ClickListener() {
                 @Override public void clicked(InputEvent e, float x, float y) {
-                    // Di AAA Game PC kadang langsung quit, tapi di mobile konfirmasi. Kita pakai konfirmasi untuk keduanya agar aman.
                     showConfirm("Exit Nightmare to Desktop?", onExitGameCallback);
                 }
             });
@@ -117,12 +111,10 @@ public class PauseMenuUI {
         Label.LabelStyle style = new Label.LabelStyle(assets.defaultFont, Color.WHITE);
         Label questionLabel = new Label("Are you sure?", style);
 
-        // Pakai teks biasa sementara untuk Yes/No, kecuali ada PNG-nya
         Label.LabelStyle btnStyle = new Label.LabelStyle(assets.defaultFont, Color.RED);
         Label btnYes = new Label("[ YES ]", btnStyle);
         Label btnNo = new Label("[ CANCEL ]", style);
 
-        // Efek Hover Label biasa
         btnYes.addListener(new ClickListener() {
             Runnable action;
             @Override public void clicked(InputEvent e, float x, float y) {
@@ -186,7 +178,6 @@ public class PauseMenuUI {
         settingsOverlayTable.setVisible(true);
     }
 
-    // --- PUBLIC API UNTUK HUD MANAGER ---
 
     public void show() {
         rootTable.setVisible(true);

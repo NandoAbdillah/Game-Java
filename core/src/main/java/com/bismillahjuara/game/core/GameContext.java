@@ -8,7 +8,7 @@ import com.bismillahjuara.game.managers.WorldManager;
 import com.bismillahjuara.game.entity.Player;
 
 
-public class GameContext {
+public class GameContext {]
     public AdvancedCameraSystem camera;
     public GameInputHandler inputHandler;
     public Player player;
@@ -33,9 +33,7 @@ public class GameContext {
     public com.bismillahjuara.game.entity.ButoIjo boss = null;
     public boolean isEndingTriggered = false;
 
-    /**
-     * Dipanggil oleh RelicPusaka.java saat ditabrak player
-     */
+
     public void collectRelic() {
         relicsCollected++;
         audio.playSFX(com.bismillahjuara.game.audio.AudioSFX.UI_CONFIRM); // Suara pungut
@@ -48,6 +46,5 @@ public class GameContext {
 
     private void triggerAct2() {
         currentAct = 2;
-        // TODO: Mainkan lagu boss, spawn Buto Ijo, tampilkan teks "Act 2"
     }
 }

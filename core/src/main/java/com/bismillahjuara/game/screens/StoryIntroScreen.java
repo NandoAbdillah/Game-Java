@@ -23,16 +23,11 @@ import com.bismillahjuara.game.audio.AudioManager;
 import com.bismillahjuara.game.settings.SettingsManager;
 import com.bismillahjuara.game.ui.FontManager;
 
-/**
- * AAA Cinematic Prologue Screen.
- * 100% Video & Audio. Fades elegantly.
- */
 public class StoryIntroScreen extends BaseScreen {
 
     private static final String VIDEO_PATH = "video/prolog.webm";
     private static final String AUDIO_PATH = "sound/prolog_voice.ogg";
 
-    // Overlay sangat tipis (0.15) agar video tetap mendominasi visual
     private static final float OVERLAY_ALPHA = 0.15f;
 
     // --- VIDEO & AUDIO SYSTEM ---
@@ -98,7 +93,7 @@ public class StoryIntroScreen extends BaseScreen {
     private void setupCinematicFader() {
         cinematicFader = new Image(solidBlackTex);
         cinematicFader.setFillParent(true);
-        cinematicFader.setTouchable(Touchable.disabled); // Agar tidak menghalangi klik ke skip button
+        cinematicFader.setTouchable(Touchable.disabled);
         stage.addActor(cinematicFader);
     }
 
@@ -116,7 +111,6 @@ public class StoryIntroScreen extends BaseScreen {
         skipBtn.getColor().a = 0f;
         skipBtn.setTouchable(Touchable.disabled);
 
-        // AAA Detail: Tombol Skip hanya muncul setelah 30 detik video berjalan
         skipBtn.addAction(Actions.sequence(
             Actions.delay(30f),
             Actions.parallel(
@@ -161,7 +155,6 @@ public class StoryIntroScreen extends BaseScreen {
 
         initVideoBackgroundIfNeeded();
 
-        // AAA Transisi: Fade from Black perlahan membuka pemandangan video (1.5 detik)
         cinematicFader.addAction(Actions.sequence(
             Actions.fadeOut(1.5f),
             Actions.visible(false)
@@ -191,9 +184,8 @@ public class StoryIntroScreen extends BaseScreen {
             }
 
             videoPlayer.setLooping(false);
-            videoPlayer.setVolume(0f); // Volume asli mati karena kita pakai voice_over.ogg
+            videoPlayer.setVolume(0f);
 
-            // Auto lanjut ke gameplay jika video berdurasi 57 detik selesai
             videoPlayer.setOnCompletionListener(new VideoPlayer.CompletionListener() {
                 @Override
                 public void onCompletionListener(FileHandle file) {
@@ -222,7 +214,6 @@ public class StoryIntroScreen extends BaseScreen {
     }
 
     private void triggerFailsafeLoading() {
-        // Jika file WEBM rusak/hilang, tunggu 3 detik lalu masuk loading
         stage.addAction(Actions.sequence(
             Actions.delay(3f),
             Actions.run(new Runnable() {
@@ -235,14 +226,12 @@ public class StoryIntroScreen extends BaseScreen {
         if (isSkipping) return;
         isSkipping = true;
 
-        // 1. Mulai turunkan volume suara perlahan (Fade Out Audio)
         if (storyVoiceOver != null && storyVoiceOver.isPlaying()) {
             isAudioFading = true;
             audioFadeTimer = 0.5f;
             initialAudioVolume = storyVoiceOver.getVolume();
         }
 
-        // 2. Mainkan Layar Hitam "Fade To Black" selama 1 Detik
         cinematicFader.setVisible(true);
         cinematicFader.toFront();
         cinematicFader.addAction(Actions.sequence(
@@ -250,7 +239,6 @@ public class StoryIntroScreen extends BaseScreen {
             Actions.run(new Runnable() {
                 @Override
                 public void run() {
-                    // Pastikan audio mati total sebelum pindah layar
                     if (storyVoiceOver != null) storyVoiceOver.stop();
                     ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
                 }
@@ -284,7 +272,6 @@ public class StoryIntroScreen extends BaseScreen {
         int screenH = Gdx.graphics.getHeight();
         boolean drawn = false;
 
-        // 1. RENDER VIDEO PROLOG
         if (videoAvailable && videoPlayer != null) {
             videoPlayer.update();
             Texture frame = videoPlayer.getTexture();
@@ -295,19 +282,16 @@ public class StoryIntroScreen extends BaseScreen {
             }
         }
 
-        // 2. FALLBACK JIKA VIDEO GAGAL
         if (!drawn && solidBlackTex != null) {
             batch.draw(solidBlackTex, 0, 0, screenW, screenH);
         }
 
-        // 3. OVERLAY TIPIS (0.15 Alpha)
         if (darkOverlayTex != null) {
             batch.draw(darkOverlayTex, 0, 0, screenW, screenH);
         }
 
         batch.end();
 
-        // 4. RENDER UI STAGE (Skip Button & Cinematic Fader)
         stage.draw();
     }
 

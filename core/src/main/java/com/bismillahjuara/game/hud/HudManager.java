@@ -7,9 +7,6 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.bismillahjuara.game.core.GameContext;
 import com.bismillahjuara.game.input.GameInputHandler;
 
-/**
- * Manajer UI Modern.
- */
 public class HudManager {
     private Stage stage;
     private HudAssets assets;
@@ -22,22 +19,21 @@ public class HudManager {
         stage = new Stage(new ScreenViewport());
         assets = new HudAssets();
 
-        // 1. Buat Debug UI
+        // Buat Debug UI
         debugUI = new DebugUI();
         stage.addActor(debugUI.getRootTable());
 
-        // 2. Buat Mobile Controls jika di HP
+        // Buat Mobile Controls jika di HP
         if (GameInputHandler.IS_MOBILE) {
             mobileControls = new MobileControlsUI(assets);
             stage.addActor(mobileControls.getRootTable());
         }
 
-        // 3. Buat Pause Menu UI (Paling atas)
+        // Buat Pause Menu UI (Paling atas)
         pauseMenuUI = new PauseMenuUI(assets);
         stage.addActor(pauseMenuUI.getRootTable());
     }
 
-    // FIX 3: Mengirim GameContext agar DebugUI bisa membaca jumlah pusaka!
     public void updateAndRender(GameContext context) {
         // Buka kunci update DebugUI!
         if (context != null) {
@@ -48,7 +44,6 @@ public class HudManager {
         stage.draw();
     }
 
-    // --- PAUSE API ---
     public void showPauseMenu() {
         if (!pauseMenuUI.isVisible()) pauseMenuUI.show();
         if (mobileControls != null) mobileControls.getRootTable().setVisible(false); // Sembunyikan joystick

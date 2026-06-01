@@ -1,8 +1,5 @@
 package com.bismillahjuara.game.core;
 
-/**
- * Konduktor Logika Game, Menggunakan sistem Fixed Timestep Accumulator
- */
 public class UpdatePipeline {
     private GameContext context;
     private float accumulator = 0f;
@@ -13,16 +10,14 @@ public class UpdatePipeline {
 
     public void update(float delta) {
         if (context.state != GameplayState.PLAYING && context.state != GameplayState.CUTSCENE) {
-            return; // berhenti berpikir jika di pause atau mati
+            return;
         }
 
         float frameTime = Math.min(delta, 0.25f);
         accumulator += frameTime;
 
-        // FIXED TIMESTEP LOOP (selalu berjalan di 60 FPS )
         while (accumulator >= context.fixedTimeStep) {
 
-            // Baca Input Player (hanya jalan jika state = PLAYING)
             if (context.state == GameplayState.PLAYING && context.player != null) {
                 context.player.processInputAndPhysics(
                     context.inputHandler.getAction(),
@@ -43,9 +38,5 @@ public class UpdatePipeline {
             // Kurangi sisa waktu
             accumulator -= context.fixedTimeStep;
         }
-
-        // TODO:  Hitung nilai Alpha untuk Render Interpolation:
-        // float alpha = accumulator / context.fixedTimeStep;
-        // Berikan nilai alpha ini ke RenderPipeline untuk menggeser model dengan super mulus
     }
 }

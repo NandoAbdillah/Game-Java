@@ -1,9 +1,5 @@
 package com.bismillahjuara.game.input;
 
-/**
- * Data class yang menampung semua "niat" (intent) dari pemain.
- * Class ini murni hanya data, tidak ada logika Gdx.input di sini.
- */
 public class InputAction {
     // MOVEMENT
     public float moveX = 0f;
@@ -14,7 +10,6 @@ public class InputAction {
     public boolean crouchHeld = false;
     public boolean blockHeld = false;
 
-    // --- TRANSIENT ACTIONS (Aksi sekali tekan / Trigger) ---
     public boolean jumpPressed = false;
     public boolean attackPressed = false;
     public boolean kickPressed = false;
@@ -25,12 +20,8 @@ public class InputAction {
     public boolean diePressed = false; // Untuk testing
 
     public boolean toggleCameraPressed = false;
-    // --- SYSTEM ACTIONS ---
-    public boolean pausePressed = false; // AAA Pause Button
+    public boolean pausePressed = false;
 
-    /**
-     * Memastikan semua aksi trigger di-reset setiap frame agar tidak spam. (LibGDX's isKeyJustPressed sudah otomatis, tapi method ini berguna untuk Mobile/Gamepad nanti)
-     */
     public void resetTransientActions() {
         jumpPressed = false;
         attackPressed = false;

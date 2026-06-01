@@ -63,7 +63,7 @@ public class ButoIjo extends Entity {
         applyTransform();
         animationController = enemyScene.animationController;
         if (animationController != null) {
-            currentState = null; // Failsafe agar animasi awal mau jalan
+            currentState = null;
             changeState(State.IDLE);
         }
         if (context.sceneRenderer != null) context.sceneRenderer.addScene(enemyScene);
@@ -95,7 +95,6 @@ public class ButoIjo extends Entity {
     public void update(float delta) {
         if (currentState == State.DEAD) return;
 
-        // PENTING: Update animation controller HANYA sekali di sini
         if (animationController != null) {
             animationController.update(delta);
         }
@@ -120,11 +119,9 @@ public class ButoIjo extends Entity {
         float dirX = playerPos.x - position.x;
         float dirZ = playerPos.z - position.z;
 
-        // Putar wujud boss secara halus ke arah pemain
         float targetYaw = MathUtils.atan2(dirX, dirZ) * MathUtils.radiansToDegrees;
         this.yaw = lerpAngle(this.yaw, targetYaw, 5.0f * delta);
 
-        // --- MONSTER AUDIO PROXIMITY ---
         if (dist <= ROAR_DISTANCE) {
             monsterRoarTimer -= delta;
             if (monsterRoarTimer <= 0) {
@@ -135,9 +132,7 @@ public class ButoIjo extends Entity {
             monsterRoarTimer = 0f;
         }
 
-        // --- GLOBAL RADAR CHASE LOGIC ---
         if (dist > 3.0f) {
-            // FIX AAA: Panggil changeState HANYA jika state sebelumnya BUKAN CHASE
             if (currentState != State.CHASE) {
                 changeState(State.CHASE);
             }
@@ -202,14 +197,12 @@ public class ButoIjo extends Entity {
     }
 
     private void changeState(State newState) {
-        // Pengecekan ganda agar animasi tidak mereset dirinya sendiri
         if (currentState == newState || animationController == null) return;
 
         this.currentState = newState;
         try {
             switch (newState) {
                 case IDLE: animationController.animate("Idle", -1, 1f, null, 0.2f); break;
-                // FIX AAA: Ganti nama animasinya jika di model Boss-mu tidak pakai nama "Run"
                 case CHASE: animationController.animate("Run", -1, 1f, null, 0.2f); break;
                 case BURNING: animationController.animate("Die", -1, 1f, null, 0.1f); break;
                 default: break;

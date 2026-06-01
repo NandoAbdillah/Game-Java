@@ -16,31 +16,20 @@ public class Main extends Game {
 
     @Override
     public void create() {
-        // 1. Terapkan Settings (Resolusi, FPS, dll) dari Harddisk ke Engine!
         SettingsManager.getInstance().applyToEngine();
 
-        // 2. Inisialisasi Arsitektur Layar
         ScreenManager.getInstance().initialize(this);
 
-        // 3. Masuk Intro
         ScreenManager.getInstance().setScreen(new SplashScreen(), null);
-//        ScreenManager.getInstance().setScreen(new StreamingLoadingOverlay(), null);
-
-//        ScreenManager.getInstance().setScreen(new StoryIntroScreen(), new FadeTransition(1.0f));
     }
 
     @Override
     public void render() {
 
-        // Meneruskan perintah render loop ke konduktor layar
-//        ScreenManager.getInstance().render(Gdx.graphics.getDeltaTime());
 
         float delta = Gdx.graphics.getDeltaTime();
-        // 1. Update Global Audio Engine (Biar lagu tidak putus)
         AudioManager.getInstance().update(delta);
 
-        // 2. Meneruskan perintah render loop ke konduktor layar
-//        ScreenManager.getInstance().render(delta);
 
         ScreenManager.getInstance().render(Gdx.graphics.getDeltaTime());
 
@@ -48,7 +37,6 @@ public class Main extends Game {
 
     @Override
     public void dispose() {
-        // Bersihkan seluruh memori dari ScreenManager dan UIManager
         ScreenManager.getInstance().dispose();
         MenuUIManager.getInstance().dispose();
     }

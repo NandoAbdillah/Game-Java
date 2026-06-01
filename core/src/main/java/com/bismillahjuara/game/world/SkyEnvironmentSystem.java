@@ -25,10 +25,6 @@ import com.bismillahjuara.game.audio.AudioSFX;
 import net.mgsx.gltf.scene3d.lights.DirectionalLightEx;
 import net.mgsx.gltf.scene3d.scene.SceneManager;
 
-/**
- * AAA Living Sky Environment.
- * Mengelola 360 Panorama, pergerakan awan/kabut, dan state machine Petir + Suara.
- */
 public class SkyEnvironmentSystem {
 
     private ModelBatch skyBatch;
@@ -39,10 +35,7 @@ public class SkyEnvironmentSystem {
     private SceneManager targetSceneManager;
     private DirectionalLightEx targetSunLight;
 
-    // --- FIX AAA: SETTING HORROR SEJATI ---
-    // Ambient: Sangat redup agar area tanpa senter terlihat hitam (0.05f)
     private final Color normalAmbientColor = new Color(0.05f, 0.05f, 0.08f, 1f);
-    // Matahari/Bulan: Warna biru malam pucat, tidak menyilaukan
     private final Color normalSunColor = new Color(0.2f, 0.3f, 0.4f, 1f);
     private final float normalSunIntensity = 0.2f;
 
@@ -67,7 +60,6 @@ public class SkyEnvironmentSystem {
     }
 
     private void loadTextures() {
-        // FIX AAA: Kalau panorama.png ga ada, warnanya jadi Biru Malam Estetik (Bukan hitam buta)
         skyTex = loadTextureSafe("textures/panorama.png", new Color(0.15f, 0.25f, 0.45f, 1f));
         cloudTex = loadTextureSafe("textures/clouds.png", new Color(1f, 1f, 1f, 0.0f));
         fogTex = loadTextureSafe("textures/fog.png", new Color(0.5f, 0.5f, 0.5f, 0.0f));

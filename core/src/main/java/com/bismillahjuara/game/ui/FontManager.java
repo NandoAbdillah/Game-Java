@@ -10,17 +10,16 @@ public class FontManager {
 
     private static FontManager instance;
 
-    private BitmapFont titleFont; // Untuk Triforce.otf (Heading)
-    private BitmapFont bodyFont;  // Untuk Wild.otf (Paragraph/Sub)
+    private BitmapFont titleFont;
+    private BitmapFont bodyFont;
 
     private FontManager() {
-        // 1. LOAD FONT WILD (BODY)
         try {
             FileHandle wildFile = Gdx.files.internal("font/wild.otf");
             if (wildFile.exists()) {
                 FreeTypeFontGenerator generator = new FreeTypeFontGenerator(wildFile);
                 FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                parameter.size = 48; // Ukuran standar untuk teks
+                parameter.size = 48;
                 parameter.minFilter = Texture.TextureFilter.Linear;
                 parameter.magFilter = Texture.TextureFilter.Linear;
                 parameter.genMipMaps = true;
@@ -36,13 +35,12 @@ public class FontManager {
             bodyFont = new BitmapFont();
         }
 
-        // 2. LOAD FONT TRIFORCE (TITLE)
         try {
             FileHandle triforceFile = Gdx.files.internal("font/triforce.otf");
             if (triforceFile.exists()) {
                 FreeTypeFontGenerator generator = new FreeTypeFontGenerator(triforceFile);
                 FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                parameter.size = 72; // Ukuran besar untuk Judul
+                parameter.size = 72;
                 parameter.minFilter = Texture.TextureFilter.Linear;
                 parameter.magFilter = Texture.TextureFilter.Linear;
                 parameter.genMipMaps = true;
@@ -74,7 +72,6 @@ public class FontManager {
         return bodyFont;
     }
 
-    // BACKWARD COMPATIBILITY: Menjaga kodingan lama yang masih memanggil getFont() agar tidak error
     public BitmapFont getFont() {
         return bodyFont;
     }

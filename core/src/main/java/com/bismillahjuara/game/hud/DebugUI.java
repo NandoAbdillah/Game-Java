@@ -79,9 +79,6 @@ public class DebugUI {
 
         hudTable.add(rightTable).expandX().right().top();
 
-        // --- FIX AAA: BACKGROUND HITAM 100% WORK ---
-        // Kita tidak pakai .setBackground(drawable) karena sering bermasalah saat fade di Scene2D.
-        // Solusinya: Kita pakai objek Image sungguhan yang menutupi layar!
         cinematicTable = new Table();
         cinematicTable.setFillParent(true);
         cinematicTable.getColor().a = 0f;
