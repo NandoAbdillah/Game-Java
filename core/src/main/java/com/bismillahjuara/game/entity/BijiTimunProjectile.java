@@ -15,6 +15,8 @@ import net.mgsx.gltf.scene3d.scene.Scene;
 
 public class BijiTimunProjectile extends Entity {
 
+    private static Model sharedSeedModel;
+
     private Scene bijiScene;
     private Vector3 forwardDir = new Vector3();
     private float speed;
@@ -22,55 +24,54 @@ public class BijiTimunProjectile extends Entity {
     private float gravity = -25f;
     private float lifeTimer = 3.0f;
 
-    // --- FIX AAA: Sinkronisasi Animasi Tangan Player ---
     private float delayTimer = 1.2f;
     private boolean canMove = false;
-    private boolean isVisible = false; // Sembunyikan selama ancang-ancang!
+    private boolean isVisible = false;
+    private boolean playSoundOnSpawn;
 
-    public BijiTimunProjectile(Vector3 startPos, float yaw, GameContext context, boolean b) {
+    public BijiTimunProjectile(Vector3 startPos, float yaw, GameContext context, boolean playSoundOnSpawn) {
         super(startPos, context);
         this.yaw = yaw;
+        this.playSoundOnSpawn = playSoundOnSpawn;
 
         float yawRad = MathUtils.degreesToRadians * yaw;
         forwardDir.set(MathUtils.sin(yawRad), 0, MathUtils.cos(yawRad)).nor();
 
-        // Speed dilebarkan jangkauannya agar hamburan peluru terasa lebih acak dan natural
-        this.speed = MathUtils.random(12f, 25f);
+        this.speed = MathUtils.random(15f, 25f);
         this.verticalVelocity = MathUtils.random(6f, 10f);
 
         buildSeed();
     }
 
     private void buildSeed() {
-        ModelBuilder mb = new ModelBuilder();
-        Material mat = new Material(
-            ColorAttribute.createDiffuse(new Color(0.95f, 0.93f, 0.8f, 1f)),
-            ColorAttribute.createEmissive(new Color(0.4f, 0.8f, 0.2f, 1f))
-        );
-        Model box = mb.createBox(0.04f, 0.02f, 0.08f, mat, Usage.Position | Usage.Normal);
-        ModelInstance instance = new ModelInstance(box);
-        bijiScene = new Scene(instance);
+        if (sharedSeedModel == null) {
+            ModelBuilder mb = new ModelBuilder();
+            Material mat = new Material(
+                ColorAttribute.createDiffuse(new Color(0.95f, 0.93f, 0.8f, 1f)),
+                ColorAttribute.createEmissive(new Color(0.4f, 0.8f, 0.2f, 1f))
+            );
+            sharedSeedModel = mb.createBox(0.04f, 0.02f, 0.08f, mat, Usage.Position | Usage.Normal);
+        }
 
-        // PENTING: Jangan render ke layar dulu (tunggu animasi tangan 1.2 detik selesai)
+        ModelInstance instance = new ModelInstance(sharedSeedModel);
+        bijiScene = new Scene(instance);
     }
 
     @Override
     public void update(float delta) {
-        // 1. TUNGGU ANIMASI TANGAN SELESAI
         if (!canMove) {
             delayTimer -= delta;
             if (delayTimer <= 0) {
                 canMove = true;
                 isVisible = true;
-
-                // Munculkan biji ke layar dan putar suara tembakan TEPAT saat delay habis
                 context.sceneRenderer.addScene(bijiScene);
-                context.audio.playSFX(AudioSFX.JIMAT_THROW);
+                if (playSoundOnSpawn) {
+                    context.audio.playSFX(AudioSFX.JIMAT_THROW);
+                }
             }
             return;
         }
 
-        // 2. PELURU MELAYANG
         lifeTimer -= delta;
         if (lifeTimer <= 0) {
             destroy();
@@ -105,15 +106,14 @@ public class BijiTimunProjectile extends Entity {
             if (e instanceof SukmaGowong) {
                 SukmaGowong enemy = (SukmaGowong) e;
                 if (!enemy.isDead() && enemy.getPosition().dst(this.position) < 2.5f) {
-                    enemy.takeBurnDamage();
+                    // FIX AAA: Biji Timun memberikan 50 Damage (2x kena = Mati)
+                    enemy.takeDamage(50f);
                     destroy();
                     return;
                 }
             }
-            // FIX PHASE 3: Deteksi Serangan ke Buto Ijo
             else if (e instanceof ButoIjo) {
                 ButoIjo boss = (ButoIjo) e;
-                // Hitbox boss lebih besar (3.5f)
                 if (!boss.isDead() && boss.getPosition().dst(this.position) < 3.5f) {
                     boss.takeHit();
                     destroy();

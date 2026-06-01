@@ -1,5 +1,6 @@
 package com.bismillahjuara.game.assets;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
@@ -18,11 +19,20 @@ public class GameAssets {
     // --- ASSET PATHS ---
     public static final String MAP_GLB = "models/maps/Maps.glb";
     public static final String PLAYER_GLB = "models/chars/TimunAnim2.glb";
-    public static final String ENEMY_GLB = "models/chars/SukmaGowong.glb"; // Atau models/enemies/SukmaGowong.glb
+    public static final String ENEMY_GLB = "models/chars/SukmaGowong.glb";
+
+    public static  final String BUTO_GLB = "models/chars/ButoIjo.glb";
+
+    public static final String HOME_GLB = "models/maps/Home.glb";
+    public static final String TEMPLE_GLB = "models/maps/Temple.glb";
+
+    // --- PUSAKA GLB PATHS ---
+    public static final String KERIS_GLB = "models/object/Keris.glb";
+    public static final String KUJANG_GLB = "models/object/Kujang.glb";
+    public static final String MANDAU_GLB = "models/object/Mandau.glb";
 
     private GameAssets() {
         manager = new AssetManager();
-        // DAFTARKAN GLB LOADER AGAR BISA DIBACA DI BACKGROUND THREAD!
         manager.setLoader(SceneAsset.class, ".glb", new GLBAssetLoader(new InternalFileHandleResolver()));
     }
 
@@ -35,11 +45,16 @@ public class GameAssets {
         safeLoadSound(AudioSFX.UI_CLICK.path);
         safeLoadSound(AudioSFX.UI_HOVER.path);
         safeLoadSound(AudioSFX.UI_BACK.path);
+        safeLoadMusic(AudioSFX.HEARTBEAT.path);
+        safeLoadMusic(AudioSFX.SUKMA_01.path);
+        safeLoadMusic(AudioSFX.SUKMA_02.path);
         safeLoadMusic(AudioTrack.THEME.path);
+        safeLoadMusic(AudioTrack.CREDITS_THEME.path);
+        safeLoadMusic(AudioTrack.FOREST_AMBIENT.path);
+
     }
 
     public void queueGameplayAssets() {
-        // AUDIO
         for (AudioTrack track : AudioTrack.values()) {
             if (!manager.isLoaded(track.path)) safeLoadMusic(track.path);
         }
@@ -48,17 +63,33 @@ public class GameAssets {
         }
 
         // 3D MODELS (ASYNC LOADING)
-        manager.load(MAP_GLB, SceneAsset.class);
-        manager.load(PLAYER_GLB, SceneAsset.class);
-        manager.load(ENEMY_GLB, SceneAsset.class);
+        safeLoadGLB(MAP_GLB);
+        safeLoadGLB(PLAYER_GLB);
+        safeLoadGLB(ENEMY_GLB);
+        safeLoadGLB(HOME_GLB);
+        safeLoadGLB(TEMPLE_GLB);
+        safeLoadGLB(BUTO_GLB);
+
+        safeLoadGLB(KERIS_GLB);
+        safeLoadGLB(KUJANG_GLB);
+        safeLoadGLB(MANDAU_GLB);
+    }
+
+    // Helper untuk GLB agar tidak crash kalau file belum dibuat
+    private void safeLoadGLB(String path) {
+        if (Gdx.files.internal(path).exists()) {
+            manager.load(path, SceneAsset.class);
+        } else {
+            Gdx.app.error("ASSETS", "Model 3D tidak ditemukan: " + path);
+        }
     }
 
     private void safeLoadMusic(String path) {
-        if (com.badlogic.gdx.Gdx.files.internal(path).exists()) manager.load(path, Music.class);
+        if (Gdx.files.internal(path).exists()) manager.load(path, Music.class);
     }
 
     private void safeLoadSound(String path) {
-        if (com.badlogic.gdx.Gdx.files.internal(path).exists()) manager.load(path, Sound.class);
+        if (Gdx.files.internal(path).exists()) manager.load(path, Sound.class);
     }
 
     public void dispose() {

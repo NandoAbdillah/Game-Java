@@ -2,6 +2,7 @@ package com.bismillahjuara.game.core;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.shaders.DepthShader;
 import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
@@ -34,7 +35,6 @@ public class SceneRenderer {
 
         setupLighting();
 
-        // Inisialisasi Langit Dinamis dan berikan kendali cahaya (SunLight) kepadanya
         skySystem = new SkyEnvironmentSystem(sceneManager, mainSunLight);
     }
 
@@ -47,6 +47,10 @@ public class SceneRenderer {
         sceneManager.environment.add(mainSunLight);
     }
 
+    public Environment getEnvironment() {
+        return sceneManager.environment;
+    }
+
     public void addScene(Scene scene) {
         sceneManager.addScene(scene);
     }
@@ -56,13 +60,9 @@ public class SceneRenderer {
     }
 
     public void render(PerspectiveCamera camera, float delta) {
-        // 1. Update logika Cuaca, Awan, dan Petir
         skySystem.update(delta, camera.position);
-
-        // 2. Render Bola Langit/Awan TERLEBIH DAHULU di layer paling belakang (Zero Overdraw)
         skySystem.render(camera);
 
-        // 3. Render Dunia 3D GLTF (Pohon, Tanah, Karakter) di atasnya
         sceneManager.setCamera(camera);
         sceneManager.update(delta);
         sceneManager.render();

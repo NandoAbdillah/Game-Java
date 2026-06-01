@@ -34,7 +34,6 @@ public class ShaderWarmup {
         long timeTaken = System.currentTimeMillis() - startTime;
         Gdx.app.log("WARMUP", "Kompilasi selesai dalam " + timeTaken + " ms.");
 
-        // TODO: Future Up - Spawn 1 model musuh dan player off-screen untuk memastikan texture cache masuk ke VRAM
     }
 
     public static SceneManager getPrecompiledSceneManager() {
