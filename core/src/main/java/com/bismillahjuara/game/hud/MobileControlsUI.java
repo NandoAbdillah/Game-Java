@@ -7,6 +7,7 @@ import com.bismillahjuara.game.ui.AnimatedImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
+//enkapsulasi,kunci sistem aagr tidak bisa diubah langsung dari sistem lain
 public class MobileControlsUI {
     private Table mainTable;
     private Touchpad joystick;
@@ -21,6 +22,7 @@ public class MobileControlsUI {
     private AnimatedImageButton btnPause;
     private boolean pauseClicked = false;
 
+    //konstruktor bangun objek ui pertama kali
     public MobileControlsUI(HudAssets assets) {
         mainTable = new Table();
         mainTable.setFillParent(true);
@@ -67,7 +69,7 @@ public class MobileControlsUI {
         return mainTable;
     }
 
-    // --- GETTER UNTUK MOBILE INPUT CONTROLLER ---
+    // Getter mobile input controller
     public float getJoystickX() { return joystick.getKnobPercentX(); }
     public float getJoystickY() { return joystick.getKnobPercentY(); }
 
@@ -76,7 +78,7 @@ public class MobileControlsUI {
     public boolean isThrowPressed() { return btnThrow.isPressed(); }
     public boolean isCrouchPressed() { return btnCrouch.isPressed(); }
 
-    // Ambil status pause, lalu reset (konsumsi event)
+    // Ambil status pause, lalu reset
     public boolean isPauseClicked() {
         if (pauseClicked) {
             pauseClicked = false;

@@ -2,7 +2,7 @@ package com.bismillahjuara.game.input;
 
 import com.badlogic.gdx.InputAdapter;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
-
+//abstraksi,inheritance,
 public abstract class BaseInputController extends InputAdapter {
     protected AdvancedCameraSystem camera;
     protected InputAction action;

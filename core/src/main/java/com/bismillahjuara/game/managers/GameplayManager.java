@@ -197,7 +197,7 @@ public class GameplayManager {
         context.worldManager.enemySpawnPositions.clear();
         Array<Vector3> spawnedPositions = new Array<>();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 30; i++) {
             Vector3 spawnPos = new Vector3();
             boolean valid = false;
             int retries = 50;
