@@ -93,6 +93,7 @@ public class GameScreen implements Screen {
 
         gameplayManager.onAct2Cinematic = new Runnable() {
             @Override public void run() {
+                gameplayManager.pauseGame();
                 hudManager.getDebugUI().playCinematic(
                     "ACT II : TIMUN REVENGE'S",
                     "Ibunya berpesan bahwa pusaka-pusaka tersebut menyimpan kekuatan yang cukup untuk membalas dendam.\n\nButo Ijo harus dihentikan sebelum semuanya terlambat. Lemparkan pusaka timun sebanyak 10 kali untuk mengalahkannya.",
@@ -124,6 +125,7 @@ public class GameScreen implements Screen {
 
         gameplayManager.onEnding2Cinematic = new Runnable() {
             @Override public void run() {
+
                 hudManager.getDebugUI().playCinematic(
                     "ENDING 2",
                     "Buto Ijo terbakar hingga lenyap. Barulah Timun mengetahui bahwa sosok tersebut adalah ayah kandungnya sendiri.\n\nDendam yang diwariskan ibunya ternyata berasal dari masa lalu yang jauh lebih kelam...",
