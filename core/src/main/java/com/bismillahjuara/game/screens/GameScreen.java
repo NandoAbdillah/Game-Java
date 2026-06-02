@@ -76,7 +76,7 @@ public class GameScreen implements Screen {
                 hudManager.getDebugUI().playCinematic(
                     "ACT I : PUSAKA YANG HILANG",
                     "Bukan sihir cahaya, melainkan benda-benda ritual peninggalan ibunya yang terasa berat dan mistis tersebar di dalam hutan.\n\nTimun harus menemukan seluruh pusaka tersebut jika ingin memiliki kekuatan untuk menghadapi Buto Ijo.",
-                    6f,
+                    15f,
                     new Runnable() {
                         @Override public void run() {
                             gameplayManager.resumeGame();
@@ -96,7 +96,7 @@ public class GameScreen implements Screen {
                 hudManager.getDebugUI().playCinematic(
                     "ACT II : TIMUN REVENGE'S",
                     "Ibunya berpesan bahwa pusaka-pusaka tersebut menyimpan kekuatan yang cukup untuk membalas dendam.\n\nButo Ijo harus dihentikan sebelum semuanya terlambat. Lemparkan pusaka timun sebanyak 10 kali untuk mengalahkannya.",
-                    6f,
+                    15f,
                     new Runnable() {
                         @Override public void run() {
                             gameplayManager.spawnButoIjo();
@@ -116,7 +116,7 @@ public class GameScreen implements Screen {
                 hudManager.getDebugUI().playCinematic(
                     "ENDING 1",
                     "Timun akhirnya mengetahui bahwa sosok yang selama ini dibencinya ternyata adalah ayahnya sendiri.\n\nButo Ijo tidak pernah berniat membunuhnya. Namun semuanya sudah terlambat...",
-                    7f,
+                    10f,
                     new Runnable() { @Override public void run() { ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(2f)); } }
                 );
             }
@@ -127,7 +127,7 @@ public class GameScreen implements Screen {
                 hudManager.getDebugUI().playCinematic(
                     "ENDING 2",
                     "Buto Ijo terbakar hingga lenyap. Barulah Timun mengetahui bahwa sosok tersebut adalah ayah kandungnya sendiri.\n\nDendam yang diwariskan ibunya ternyata berasal dari masa lalu yang jauh lebih kelam...",
-                    7f,
+                    10f,
                     new Runnable() { @Override public void run() { ScreenManager.getInstance().setScreen(new MainMenuScreen(), new FadeTransition(2f)); } }
                 );
             }
