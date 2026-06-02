@@ -16,7 +16,7 @@ public class AsyncGameplayLoader {
         INIT_UI,
         DONE
     }
-    //enkapsulasi
+    //enkapsulasi,agar loading tidak rusak
     private LoadState currentState = LoadState.QUEUE_ASSETS;
     private GameScreen targetScreen;
     private float progress = 0f;
