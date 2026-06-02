@@ -64,7 +64,7 @@ public class CreditsScreen extends BaseScreen {
 
         addTitle(titleStyle, "PRODUCTION & MANAGEMENT");
         addDoubleColumn(roleStyle, "Project Manager", nameStyle, "Nando Abdillah Salam");
-        addDoubleColumn(roleStyle, "Coffee Procurer", nameStyle, "Nando Abdillah Salam");
+        addDoubleColumn(roleStyle, "Coffee Producer", nameStyle, "Nando Abdillah Salam");
         addDoubleColumn(roleStyle, "Deadline Enforcer", nameStyle, "Nando Abdillah Salam");
         addDoubleColumn(roleStyle, "Mental Breakdown Survivor", nameStyle, "Seluruh Tim");
         addSpace();
