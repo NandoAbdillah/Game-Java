@@ -86,7 +86,7 @@ public class AsyncGameplayLoader {
                 break;
         }
     }
-    //getter,kasih izin baca ui loading bar
+    //getter,kasih izin baca ui loading bar.
     public float getProgress() { return progress; }
     public boolean isDone() { return currentState == LoadState.DONE; }
     public GameScreen getReadyGameScreen() { return targetScreen; }
