@@ -80,7 +80,7 @@
 <table>
   <tr>
     <td align="center" width="25%">
-      <img src="docs/team/nando.jpg" alt="Nando Abdillah Salam" width="160"><br>
+      <img src="docs/images/nando.jpg" alt="Nando Abdillah Salam" width="160"><br>
       <b>Nando Abdillah Salam</b><br>
       <sub>Core Programmer</sub><br>
       <sub>Project Manager</sub><br>
@@ -91,7 +91,7 @@
       <sub>VFX Artist</sub>
     </td>
     <td align="center" width="25%">
-      <img src="docs/team/naufal.jpg" alt="M. Naufal Wicaksono" width="160"><br>
+      <img src="docs/images/naufal.jpg" alt="M. Naufal Wicaksono" width="160"><br>
       <b>M. Naufal Wicaksono</b><br>
       <sub>Gameplay Designer</sub><br>
       <sub>UI Programmer</sub><br>
@@ -101,14 +101,14 @@
       <sub>VFX Artist</sub>
     </td>
     <td align="center" width="25%">
-      <img src="docs/team/shinta.jpg" alt="Shinta Nur'aini Dwi" width="160"><br>
+      <img src="docs/images/shinta.jpg" alt="Shinta Nur'aini Dwi" width="160"><br>
       <b>Shinta Nur'aini Dwi</b><br>
       <sub>Narrative Designer</sub><br>
       <sub>3D Modeling & Texturing Artist</sub><br>
       <sub>Voice Actor</sub>
     </td>
     <td align="center" width="25%">
-      <img src="docs/team/rehil.jpg" alt="Rehil Azrilla Multajabah" width="160"><br>
+      <img src="docs/images/rehil.HEIC" alt="Rehil Azrilla Multajabah" width="160"><br>
       <b>Rehil Azrilla Multajabah</b><br>
       <sub>3D Modeling & Texturing Artist</sub><br>
       <sub>Music Composer</sub><br>
