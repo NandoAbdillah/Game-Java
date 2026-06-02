@@ -16,7 +16,7 @@ public class AsyncGameplayLoader {
         INIT_UI,
         DONE
     }
-
+    //enkapsulasi
     private LoadState currentState = LoadState.QUEUE_ASSETS;
     private GameScreen targetScreen;
     private float progress = 0f;
@@ -26,7 +26,7 @@ public class AsyncGameplayLoader {
         targetScreen = new GameScreen();
         globalStartTime = System.currentTimeMillis();
     }
-
+    //setter ,mengatur state loading
     public void update() {
         switch (currentState) {
             case QUEUE_ASSETS:
@@ -86,7 +86,7 @@ public class AsyncGameplayLoader {
                 break;
         }
     }
-
+    //getter,kasih izin baca ui loading bar
     public float getProgress() { return progress; }
     public boolean isDone() { return currentState == LoadState.DONE; }
     public GameScreen getReadyGameScreen() { return targetScreen; }

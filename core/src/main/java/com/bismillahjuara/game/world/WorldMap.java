@@ -49,7 +49,7 @@ public class WorldMap {
     private SceneAsset mapAsset;
     private Scene mapScene;
 
-
+    //konstruktor ,siapin map saat pertama game dimuat
     public WorldMap() {
         modelBatch = new ModelBatch();
 
@@ -199,8 +199,7 @@ public class WorldMap {
         }
         modelBatch.end();
 
-    }
-
+    }   //destruktor,hancurin objek di vram
     public void dispose() {
         modelBatch.dispose();
         for (Model m : worldModels) { if (m != null) m.dispose(); }

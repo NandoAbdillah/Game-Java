@@ -8,7 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
-
+//inheritance,mewarisi dari LibGDX
 public class AnimatedImageButton extends Image {
 
     private final Color idleColor = new Color(0.85f, 0.85f, 0.85f, 1f);
@@ -20,6 +20,7 @@ public class AnimatedImageButton extends Image {
         setColor(idleColor);
 
         addListener(new ClickListener() {
+            //polimorfisme overriding, timpa fungsi klik bawaan buat nambah animasi efek tombol
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
                 super.enter(event, x, y, pointer, fromActor);

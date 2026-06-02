@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.bismillahjuara.game.camera.AdvancedCameraSystem;
 import com.bismillahjuara.game.hud.HudManager;
 import com.bismillahjuara.game.hud.MobileControlsUI;
-
+//inheritance
 public class MobileInputController extends BaseInputController {
 
     private HudManager hudManager;

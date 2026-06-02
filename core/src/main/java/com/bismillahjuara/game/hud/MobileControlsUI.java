@@ -69,7 +69,7 @@ public class MobileControlsUI {
         return mainTable;
     }
 
-    // Getter mobile input controller
+    // Getter mobile input controller,ambil posisi joystick buat mobile
     public float getJoystickX() { return joystick.getKnobPercentX(); }
     public float getJoystickY() { return joystick.getKnobPercentY(); }
 
