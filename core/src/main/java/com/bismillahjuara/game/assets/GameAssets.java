@@ -73,7 +73,6 @@ public class GameAssets {
         safeLoadGLB(MANDAU_GLB);
     }
 
-    // Helper untuk GLB agar tidak crash kalau file belum dibuat
     private void safeLoadGLB(String path) {
         if (Gdx.files.internal(path).exists()) {
             manager.load(path, SceneAsset.class);
