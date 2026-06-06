@@ -1,4 +1,4 @@
-<h1 align="center"> TALE OF TIMUN MAS AND GREEN GIANT </h1>
+<h1 align="center"> TALE OF TIMUN MAS AND THE GREEN GIANT </h1>
 <p align="center"><b>3D Folklore Horror Adventure Inspired by Indonesian Mythology</b></p>
 <p align="center">"Di balik setiap baris kode, terdapat error yang menunggu untuk ditemukan. Di balik setiap hutan gelap, ada sosok yang menantimu."</p>
 
