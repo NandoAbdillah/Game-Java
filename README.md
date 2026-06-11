@@ -1,5 +1,5 @@
-<h1 align="center">🌲 TIMUN MAS  🌲</h1>
-<p align="center"><b>3D Folklore Horror Adventure Inspired by Indonesian Mythology</b></p>
+<h1 align="center"> TALE OF TIMUN MAS AND THE GREEN GIANT </h1>
+<p align="center"><b>3D Folklore Horror Adventure Inspired by Legend of Timun Mas Mythology</b></p>
 <p align="center">"Di balik setiap baris kode, terdapat error yang menunggu untuk ditemukan. Di balik setiap hutan gelap, ada sosok yang menantimu."</p>
 
 <p align="center">
