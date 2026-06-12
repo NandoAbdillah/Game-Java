@@ -142,7 +142,7 @@ Tujuan utama project ini adalah:
     <th>Ringkasan</th>
   </tr>
   <tr>
-    <td>AAA Horror Atmosphere</td>
+    <td>Horror Atmosphere</td>
     <td>Visual gelap, fog tebal, pencahayaan minim, dan petir dinamis untuk membangun ketegangan.</td>
   </tr>
   <tr>
