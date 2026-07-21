@@ -121,7 +121,7 @@
 
 ## About Project
 
-**The Tale of Timun Mas** adalah game **3D Horror Adventure** yang terinspirasi dari folklore dan nuansa mistis Indonesia. Project ini dibangun dengan **Java** dan **LibGDX**, dengan fokus pada pengalaman eksplorasi yang tegang, atmosfer gelap, audio yang imersif, serta gameplay survival yang memberi tekanan emosional kepada pemain.
+**The Tale of Timun Mas** adalah game **3D Horror Adventure** yang terinspirasi dari folklore dan nuansa mistis Indonesia. Project ini dibangun dengan **Java** dan menggunakan library **LibGDX**, dengan fokus pada pengalaman eksplorasi yang tegang, atmosfer gelap, audio yang imersif, serta gameplay survival yang memberi tekanan emosional kepada pemain.
 
 Pemain akan menjelajahi dunia yang dipenuhi aura supranatural, mengumpulkan relik penting, menghindari entitas berbahaya, serta mengungkap misteri yang mengikat dunia permainan. Selain sebagai game, project ini juga menjadi implementasi nyata dari konsep **Pemrograman Berorientasi Objek (OOP)**, arsitektur game, pengelolaan aset 3D, audio system, dan manajemen state secara terstruktur.
 
